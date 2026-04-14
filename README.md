@@ -12,55 +12,55 @@ A Python web dashboard and CLI that discovers Azure resources, collects availabi
 
 ## Features
 
-- 🌐 **Azure Portal-Style Dashboard**: Modern UI matching Azure Portal design language
-- 🌙 **Dark Mode**: Toggle between light and dark themes with localStorage persistence
-- 🔍 **Auto-Discovery**: Enumerate resources across multiple subscriptions using Azure Resource Graph
-- 📊 **Metrics Collection**: Pull availability signals from Azure Monitor
-- 📈 **SLA Trend Charts**: Track compliance trends over 30 days with historical snapshots
-- 📋 **SLA Catalog**: Map resource types to published Azure SLAs (configurable)
-- 🧮 **Compliance Calculation**: Compare actual uptime vs SLA targets
-- 📥 **Streaming CSV Export**: Memory-efficient download of SLA compliance data
-- ⏰ **Background Collection**: Automatic periodic data collection (configurable interval)
-- 💾 **Persistent Storage**: SQLite with Azure Blob Storage backup for container deployments
-- 🏥 **Health Endpoints**: `/health` and `/ready` for container orchestration
-- 🚦 **API Rate Limiting**: Optional rate limiting to protect against abuse
-- 🧪 **Comprehensive Tests**: Unit tests with pytest-asyncio for API and repository layers
-- ✨ **Animated UI**: Count-up animations, donut charts, toast notifications
-- ☁️ **Azure Container Apps Ready**: Deploy with managed identity authentication
-- ⌨️ **Keyboard Shortcuts**: Quick navigation (`?` for help, `R` refresh, `E` export, `/` search, `G+D/R/S` navigate)
-- 📅 **Date Range Presets**: One-click filters for 7d, 30d, 90d, and current month
-- 🔎 **Resource Quick View**: Modal preview of resource details without page navigation
-- 🕐 **Data Refresh Indicator**: Shows relative time since last collection with auto-refresh toggle
-- ⭐ **Favorites**: Star/pin resources for quick access with localStorage persistence
-- 📄 **PDF Export**: Print-friendly compliance reports with breach highlights
-- 🏷️ **Tag Filters**: Filter resources by Azure tags
+- **Azure Portal-Style Dashboard**: Modern UI matching Azure Portal design language
+- **Dark Mode**: Toggle between light and dark themes with localStorage persistence
+- **Auto-Discovery**: Enumerate resources across multiple subscriptions using Azure Resource Graph
+- **Metrics Collection**: Pull availability signals from Azure Monitor
+- **SLA Trend Charts**: Track compliance trends over 30 days with historical snapshots
+- **SLA Catalog**: Map resource types to published Azure SLAs (configurable)
+- **Compliance Calculation**: Compare actual uptime vs SLA targets
+- **Streaming CSV Export**: Memory-efficient download of SLA compliance data
+- **Background Collection**: Automatic periodic data collection (configurable interval)
+- **Persistent Storage**: SQLite with Azure Blob Storage backup for container deployments
+- **Health Endpoints**: `/health` and `/ready` for container orchestration
+- **API Rate Limiting**: Optional rate limiting to protect against abuse
+- **Comprehensive Tests**: Unit tests with pytest-asyncio for API and repository layers
+- **Animated UI**: Count-up animations, donut charts, toast notifications
+- **Azure Container Apps Ready**: Deploy with managed identity authentication
+- **Keyboard Shortcuts**: Quick navigation (`?` for help, `R` refresh, `E` export, `/` search, `G+D/R/S` navigate)
+- **Date Range Presets**: One-click filters for 7d, 30d, 90d, and current month
+- **Resource Quick View**: Modal preview of resource details without page navigation
+- **Data Refresh Indicator**: Shows relative time since last collection with auto-refresh toggle
+- **Favorites**: Star/pin resources for quick access with localStorage persistence
+- **PDF Export**: Print-friendly compliance reports with breach highlights
+- **Tag Filters**: Filter resources by Azure tags
 
 ## Supported Resource Types
 
 | Resource Type | Azure Type | Metrics Strategy | Status |
 |--------------|------------|------------------|--------|
-| Virtual Machines | `Microsoft.Compute/virtualMachines` | VmAvailabilityMetric | ✅ Implemented |
-| App Services | `Microsoft.Web/sites` | Requests/Http5xx | ✅ Implemented |
-| Function Apps | `Microsoft.Web/sites` (functionapp) | Requests/Http5xx | ✅ Implemented |
-| AKS Clusters | `Microsoft.ContainerService/managedClusters` | Node readiness | 🚧 Stub |
-| SQL Databases | `Microsoft.Sql/servers/databases` | Availability % | ✅ Implemented |
-| Storage Accounts | `Microsoft.Storage/storageAccounts` | Availability % | ✅ Implemented |
-| PostgreSQL Flexible | `Microsoft.DBforPostgreSQL/flexibleServers` | Availability % | ✅ Implemented |
-| Container Apps | `Microsoft.App/containerApps` | Replica count | ✅ Implemented |
-| Load Balancer | `Microsoft.Network/loadBalancers` | Health probe status | ✅ Implemented |
-| Application Gateway | `Microsoft.Network/applicationGateways` | Healthy host count | ✅ Implemented |
-| Key Vault | `Microsoft.KeyVault/vaults` | ServiceApiResult | ✅ Implemented |
-| Cosmos DB | `Microsoft.DocumentDB/databaseAccounts` | ServiceAvailability | ✅ Implemented |
-| Redis Cache | `Microsoft.Cache/Redis` | Server load | ✅ Implemented |
-| Service Bus | `Microsoft.ServiceBus/namespaces` | Server errors | ✅ Implemented |
-| Event Hubs | `Microsoft.EventHub/namespaces` | Server errors | ✅ Implemented |
-| Front Door / CDN | `Microsoft.Cdn/profiles` | Generic availability | ✅ Discovery |
-| Bastion Hosts | `Microsoft.Network/bastionHosts` | Generic availability | ✅ Discovery |
-| VNet Gateway | `Microsoft.Network/virtualNetworkGateways` | Generic availability | ✅ Discovery |
-| Azure Firewall | `Microsoft.Network/azureFirewalls` | Generic availability | ✅ Discovery |
-| Cognitive Services | `Microsoft.CognitiveServices/accounts` | Generic availability | ✅ Discovery |
-| ExpressRoute | `Microsoft.Network/expressRouteCircuits` | Generic availability | ✅ Discovery |
-| Public IPs | `Microsoft.Network/publicIPAddresses` | Generic availability | ✅ Discovery |
+| Virtual Machines | `Microsoft.Compute/virtualMachines` | VmAvailabilityMetric | Implemented |
+| App Services | `Microsoft.Web/sites` | Requests/Http5xx | Implemented |
+| Function Apps | `Microsoft.Web/sites` (functionapp) | Requests/Http5xx | Implemented |
+| AKS Clusters | `Microsoft.ContainerService/managedClusters` | Node readiness | Stub |
+| SQL Databases | `Microsoft.Sql/servers/databases` | Availability % | Implemented |
+| Storage Accounts | `Microsoft.Storage/storageAccounts` | Availability % | Implemented |
+| PostgreSQL Flexible | `Microsoft.DBforPostgreSQL/flexibleServers` | Availability % | Implemented |
+| Container Apps | `Microsoft.App/containerApps` | Replica count | Implemented |
+| Load Balancer | `Microsoft.Network/loadBalancers` | Health probe status | Implemented |
+| Application Gateway | `Microsoft.Network/applicationGateways` | Healthy host count | Implemented |
+| Key Vault | `Microsoft.KeyVault/vaults` | ServiceApiResult | Implemented |
+| Cosmos DB | `Microsoft.DocumentDB/databaseAccounts` | ServiceAvailability | Implemented |
+| Redis Cache | `Microsoft.Cache/Redis` | Server load | Implemented |
+| Service Bus | `Microsoft.ServiceBus/namespaces` | Server errors | Implemented |
+| Event Hubs | `Microsoft.EventHub/namespaces` | Server errors | Implemented |
+| Front Door / CDN | `Microsoft.Cdn/profiles` | Generic availability | Discovery |
+| Bastion Hosts | `Microsoft.Network/bastionHosts` | Generic availability | Discovery |
+| VNet Gateway | `Microsoft.Network/virtualNetworkGateways` | Generic availability | Discovery |
+| Azure Firewall | `Microsoft.Network/azureFirewalls` | Generic availability | Discovery |
+| Cognitive Services | `Microsoft.CognitiveServices/accounts` | Generic availability | Discovery |
+| ExpressRoute | `Microsoft.Network/expressRouteCircuits` | Generic availability | Discovery |
+| Public IPs | `Microsoft.Network/publicIPAddresses` | Generic availability | Discovery |
 
 ## Prerequisites
 
