@@ -657,19 +657,27 @@
             trendChart.destroy();
         }
 
-        const labels = data.map(d => {
+        // Chart.js needs at least 2 points to draw a line
+        // If only 1 data point, duplicate it to enable line rendering
+        let chartData = data;
+        if (data.length === 1) {
+            chartData = [data[0], data[0]];
+            console.log('Duplicating single data point to enable line rendering');
+        }
+
+        const labels = chartData.map(d => {
             const date = new Date(d.date);
             return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
         });
 
         // Create SLA Target data array with 99.9 for each data point
-        const slaTargetData = data.map(() => 99.9);
+        const slaTargetData = chartData.map(() => 99.9);
         console.log('SLA Target data points:', slaTargetData.length, 'values all', slaTargetData[0]);
 
         const datasets = [
             {
                 label: 'Avg Availability',
-                data: data.map(d => d.avg_availability),
+                data: chartData.map(d => d.avg_availability),
                 borderColor: '#0078d4',
                 backgroundColor: 'rgba(0, 120, 212, 0.1)',
                 fill: true,
@@ -696,11 +704,11 @@
         console.log('SLA Target dataset:', datasets[1]);
 
         // Add min/max band if data available
-        const hasMinMax = data.some(d => d.min_availability !== null && d.max_availability !== null);
+        const hasMinMax = chartData.some(d => d.min_availability !== null && d.max_availability !== null);
         if (hasMinMax) {
             datasets.push({
                 label: 'Max',
-                data: data.map(d => d.max_availability),
+                data: chartData.map(d => d.max_availability),
                 borderColor: 'rgba(34, 197, 94, 0.5)',
                 borderWidth: 1,
                 pointRadius: 0,
@@ -709,7 +717,7 @@
             });
             datasets.push({
                 label: 'Min',
-                data: data.map(d => d.min_availability),
+                data: chartData.map(d => d.min_availability),
                 borderColor: 'rgba(239, 68, 68, 0.5)',
                 borderWidth: 1,
                 pointRadius: 0,
@@ -723,7 +731,7 @@
         datasets[0].order = 1;
 
         // Calculate Y-axis min value - ensure 99.9 SLA line is always visible
-        const minDataVal = Math.min(...data.map(d => d.min_availability || d.avg_availability || 100));
+        const minDataVal = Math.min(...chartData.map(d => d.min_availability || d.avg_availability || 100));
         const yAxisMin = Math.min(99.5, Math.max(90, Math.floor(minDataVal - 1)));
 
         console.log('Final datasets count:', datasets.length);
