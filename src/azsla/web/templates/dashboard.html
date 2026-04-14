@@ -70,6 +70,13 @@
                 Export CSV
             </a>
             
+            <a href="/report/print" target="_blank" class="cmd-btn">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6v-8z" />
+                </svg>
+                Export PDF
+            </a>
+            
             <a href="/api/docs" target="_blank" class="cmd-btn">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -78,6 +85,17 @@
             </a>
             
             <div class="flex-1"></div>
+            
+            <!-- Auto-refresh toggle -->
+            <div x-data="{ autoOn: localStorage.getItem('autoRefresh') === 'true' }" class="flex items-center gap-2">
+                <button @click="autoOn = !autoOn; localStorage.setItem('autoRefresh', autoOn); if(autoOn) window.dispatchEvent(new CustomEvent('startAutoRefresh'))" 
+                        class="cmd-btn" :class="{ 'bg-azure-50 dark:bg-azure-900/30 text-azure-600': autoOn }">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span x-text="autoOn ? 'Auto: On' : 'Auto: Off'">Auto: Off</span>
+                </button>
+            </div>
             
             <button class="cmd-btn">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -178,9 +196,12 @@
                             <span class="text-portal-textSec dark:text-portal-textSecDark">Locations</span>
                             <span class="text-portal-text dark:text-portal-textDark font-medium">{{ locations | length }} regions</span>
                         </div>
-                        <div class="flex flex-col">
+                        <div class="flex flex-col" x-data="refreshIndicator('{{ last_refresh.isoformat() if last_refresh else '' }}')">
                             <span class="text-portal-textSec dark:text-portal-textSecDark">Last Refresh</span>
-                            <span class="text-portal-text dark:text-portal-textDark font-medium">{% if last_refresh %}{{ last_refresh.strftime('%Y-%m-%d %H:%M UTC') }}{% else %}Never{% endif %}</span>
+                            <div class="flex items-center gap-2">
+                                <span class="text-portal-text dark:text-portal-textDark font-medium" x-text="relativeTime">{% if last_refresh %}{{ last_refresh.strftime('%Y-%m-%d %H:%M UTC') }}{% else %}Never{% endif %}</span>
+                                <span x-show="autoRefresh" class="text-[11px] text-azure-500" x-text="'Auto-refresh in ' + countdown + 's'"></span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -910,6 +931,75 @@
                 }
             }
         });
+    }
+    
+    // Refresh indicator with relative time and auto-refresh
+    function refreshIndicator(lastRefreshIso) {
+        return {
+            relativeTime: 'Loading...',
+            autoRefresh: localStorage.getItem('autoRefresh') === 'true',
+            countdown: 300, // 5 minutes
+            intervalId: null,
+            countdownId: null,
+            
+            init() {
+                this.updateRelativeTime();
+                this.intervalId = setInterval(() => this.updateRelativeTime(), 30000); // Update every 30s
+                
+                if (this.autoRefresh) {
+                    this.startCountdown();
+                }
+                
+                // Listen for auto-refresh toggle
+                window.addEventListener('startAutoRefresh', () => {
+                    this.autoRefresh = true;
+                    this.countdown = 300;
+                    this.startCountdown();
+                });
+            },
+            
+            updateRelativeTime() {
+                if (!lastRefreshIso) {
+                    this.relativeTime = 'Never';
+                    return;
+                }
+                
+                const lastRefresh = new Date(lastRefreshIso);
+                const now = new Date();
+                const diffMs = now - lastRefresh;
+                const diffMins = Math.floor(diffMs / 60000);
+                const diffHours = Math.floor(diffMins / 60);
+                const diffDays = Math.floor(diffHours / 24);
+                
+                if (diffMins < 1) {
+                    this.relativeTime = 'Just now';
+                } else if (diffMins < 60) {
+                    this.relativeTime = diffMins + ' min' + (diffMins > 1 ? 's' : '') + ' ago';
+                } else if (diffHours < 24) {
+                    this.relativeTime = diffHours + ' hour' + (diffHours > 1 ? 's' : '') + ' ago';
+                } else {
+                    this.relativeTime = diffDays + ' day' + (diffDays > 1 ? 's' : '') + ' ago';
+                }
+            },
+            
+            startCountdown() {
+                if (this.countdownId) clearInterval(this.countdownId);
+                this.countdown = 300;
+                
+                this.countdownId = setInterval(() => {
+                    this.countdown--;
+                    if (this.countdown <= 0) {
+                        clearInterval(this.countdownId);
+                        location.reload();
+                    }
+                }, 1000);
+            },
+            
+            destroy() {
+                if (this.intervalId) clearInterval(this.intervalId);
+                if (this.countdownId) clearInterval(this.countdownId);
+            }
+        }
     }
 </script>
 {% endblock %}

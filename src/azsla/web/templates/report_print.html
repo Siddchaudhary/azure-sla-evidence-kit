@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SLA Compliance Report - {{ report_date }}</title>
+    <style>
+        @media print {
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .no-print { display: none !important; }
+            .page-break { page-break-before: always; }
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 11px;
+            line-height: 1.5;
+            color: #323130;
+            background: white;
+            padding: 20px;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 2px solid #0078d4;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            color: #0078d4;
+            font-weight: 600;
+        }
+        
+        .header .meta {
+            text-align: right;
+            color: #605e5c;
+            font-size: 10px;
+        }
+        
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .summary-card {
+            background: #f3f2f1;
+            border-radius: 4px;
+            padding: 12px;
+            text-align: center;
+        }
+        
+        .summary-card .value {
+            font-size: 28px;
+            font-weight: 600;
+            color: #323130;
+        }
+        
+        .summary-card .value.green { color: #107c10; }
+        .summary-card .value.red { color: #d13438; }
+        .summary-card .value.blue { color: #0078d4; }
+        
+        .summary-card .label {
+            font-size: 10px;
+            color: #605e5c;
+            text-transform: uppercase;
+            margin-top: 4px;
+        }
+        
+        h2 {
+            font-size: 16px;
+            color: #323130;
+            border-bottom: 1px solid #edebe9;
+            padding-bottom: 8px;
+            margin: 20px 0 12px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10px;
+        }
+        
+        th, td {
+            padding: 8px 10px;
+            text-align: left;
+            border-bottom: 1px solid #edebe9;
+        }
+        
+        th {
+            background: #f3f2f1;
+            font-weight: 600;
+            color: #605e5c;
+            text-transform: uppercase;
+            font-size: 9px;
+        }
+        
+        tr:nth-child(even) {
+            background: #faf9f8;
+        }
+        
+        .status-compliant {
+            color: #107c10;
+            font-weight: 600;
+        }
+        
+        .status-breach {
+            color: #d13438;
+            font-weight: 600;
+        }
+        
+        .status-unknown {
+            color: #797775;
+        }
+        
+        .print-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #0078d4;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .print-btn:hover {
+            background: #106ebe;
+        }
+        
+        .footer {
+            margin-top: 30px;
+            padding-top: 15px;
+            border-top: 1px solid #edebe9;
+            color: #605e5c;
+            font-size: 9px;
+            text-align: center;
+        }
+        
+        .breach-section {
+            background: #fef6f6;
+            border: 1px solid #f8d7da;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .breach-section h3 {
+            color: #d13438;
+            font-size: 13px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <button class="print-btn no-print" onclick="window.print()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/>
+            <rect x="6" y="14" width="12" height="8"/>
+        </svg>
+        Print / Save as PDF
+    </button>
+    
+    <div class="header">
+        <div>
+            <h1>SLA Compliance Report</h1>
+            <p style="color: #605e5c; margin-top: 5px;">Azure Resources Availability Summary</p>
+        </div>
+        <div class="meta">
+            <p><strong>Report Date:</strong> {{ report_date }}</p>
+            <p><strong>Period:</strong> {{ start_date }} to {{ end_date }}</p>
+            <p><strong>Generated:</strong> {{ generated_at }}</p>
+        </div>
+    </div>
+    
+    <div class="summary-grid">
+        <div class="summary-card">
+            <div class="value blue">{{ total_resources }}</div>
+            <div class="label">Total Resources</div>
+        </div>
+        <div class="summary-card">
+            <div class="value green">{{ summary.compliant or 0 }}</div>
+            <div class="label">Compliant</div>
+        </div>
+        <div class="summary-card">
+            <div class="value red">{{ summary.breach or 0 }}</div>
+            <div class="label">Breaches</div>
+        </div>
+        <div class="summary-card">
+            <div class="value">{% if summary.avg_availability %}{{ summary.avg_availability | round(2) }}%{% else %}—{% endif %}</div>
+            <div class="label">Avg Availability</div>
+        </div>
+    </div>
+    
+    {% if breaches %}
+    <div class="breach-section">
+        <h3>⚠ SLA Breaches Detected</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Resource Name</th>
+                    <th>Type</th>
+                    <th>Availability</th>
+                    <th>SLA Target</th>
+                    <th>Gap</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for metric in breaches[:20] %}
+                <tr>
+                    <td>
+                        {% if metric.resource is defined %}
+                            {{ metric.resource.name if metric.resource else metric.resource_id.split('/')[-1] }}
+                        {% else %}
+                            {{ metric.resource_name if metric.resource_name is defined else metric['resource_name'] }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if metric.resource is defined %}
+                            {{ metric.resource.type.split('/')[-1] if metric.resource else 'Unknown' }}
+                        {% else %}
+                            {{ metric.resource_type.split('/')[-1] if metric.resource_type is defined else metric['resource_type'].split('/')[-1] }}
+                        {% endif %}
+                    </td>
+                    <td class="status-breach">{{ (metric.availability_percent if metric.availability_percent is defined else metric['availability_percent']) | round(2) }}%</td>
+                    <td>{{ (metric.sla_target if metric.sla_target is defined else metric['sla_target']) | round(2) }}%</td>
+                    <td class="status-breach">-{{ ((metric.sla_target if metric.sla_target is defined else metric['sla_target']) - (metric.availability_percent if metric.availability_percent is defined else metric['availability_percent'])) | round(2) }}%</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+    
+    <h2>All Resources ({{ resources | length }})</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Resource Name</th>
+                <th>Type</th>
+                <th>Location</th>
+                <th>Resource Group</th>
+                <th>Status</th>
+                <th>Availability</th>
+                <th>SLA Target</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in resources %}
+            <tr>
+                <td>{{ item.resource.name }}</td>
+                <td>{{ item.resource.type.split('/')[-1] }}</td>
+                <td>{{ item.resource.location }}</td>
+                <td>{{ item.resource.resource_group }}</td>
+                <td>
+                    {% if item.metric %}
+                        {% if item.metric.compliance_status == 'COMPLIANT' %}
+                        <span class="status-compliant">✓ Compliant</span>
+                        {% elif item.metric.compliance_status == 'BREACH' %}
+                        <span class="status-breach">✗ Breach</span>
+                        {% else %}
+                        <span class="status-unknown">? Unknown</span>
+                        {% endif %}
+                    {% else %}
+                        <span class="status-unknown">No Data</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if item.metric and item.metric.availability_percent >= 0 %}
+                        <span class="{% if item.metric.availability_percent >= 99.9 %}status-compliant{% elif item.metric.availability_percent < 99 %}status-breach{% endif %}">
+                            {{ item.metric.availability_percent | round(2) }}%
+                        </span>
+                    {% else %}
+                        —
+                    {% endif %}
+                </td>
+                <td>
+                    {% if item.metric and item.metric.sla_target %}
+                        {{ item.metric.sla_target | round(2) }}%
+                    {% else %}
+                        —
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <div class="footer">
+        <p>Azure SLA Evidence Kit • Generated automatically • This report is for informational purposes only</p>
+        <p style="margin-top: 5px;">For official SLA claims, please refer to the Azure Portal SLA credit process.</p>
+    </div>
+</body>
+</html>

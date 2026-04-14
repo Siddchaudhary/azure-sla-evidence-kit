@@ -132,6 +132,7 @@ async def resources_view(
     location: Optional[str] = Query(None),
     status: Optional[str] = Query(None),
     search: Optional[str] = Query(None),
+    tag: Optional[str] = Query(None),
     page: int = Query(1, ge=1),
     db: AsyncSession = Depends(get_db),
 ):
@@ -153,6 +154,20 @@ async def resources_view(
     )
     metrics_map = {m.resource_id: m for m in latest_metrics}
 
+    # Collect unique tags from all resources
+    all_tags = set()
+    for r in resources:
+        if r.tags:
+            for key, value in r.tags.items():
+                all_tags.add(f"{key}:{value}")
+    tags_list = sorted(all_tags)
+
+    # Parse selected tag filter
+    selected_tag_key = None
+    selected_tag_value = None
+    if tag and ':' in tag:
+        selected_tag_key, selected_tag_value = tag.split(':', 1)
+
     # Build resource list with metrics
     resource_list = []
     for r in resources:
@@ -162,6 +177,11 @@ async def resources_view(
             continue
         if search and search.lower() not in r.name.lower():
             continue
+        
+        # Tag filter
+        if selected_tag_key and selected_tag_value:
+            if not r.tags or r.tags.get(selected_tag_key) != selected_tag_value:
+                continue
 
         metric = metrics_map.get(r.id)
         if status and metric and metric.compliance_status != status:
@@ -190,10 +210,12 @@ async def resources_view(
             "subscriptions": subscriptions,
             "resource_types": resource_types,
             "locations": locations,
+            "tags": tags_list,
             "selected_subscription": subscription_id,
             "selected_type": resource_type,
             "selected_location": location,
             "selected_status": status,
+            "selected_tag": tag,
             "search": search,
             "page": page,
             "total_pages": total_pages,
@@ -301,3 +323,80 @@ async def get_resource_api(
             for m in metrics
         ],
     }
+
+
+@router.get("/report/print", response_class=HTMLResponse)
+async def print_report(
+    request: Request,
+    subscription_ids: Optional[List[str]] = Query(None, alias="sub"),
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
+    db: AsyncSession = Depends(get_db),
+):
+    """Printable PDF-ready report view."""
+    templates = get_templates()
+    resource_repo = ResourceRepository(db)
+    metrics_repo = MetricsRepository(db)
+
+    # Parse dates
+    if not end_date:
+        end_dt = datetime.utcnow()
+        end_date = end_dt.strftime("%Y-%m-%d")
+    else:
+        end_dt = datetime.fromisoformat(end_date)
+
+    if not start_date:
+        start_dt = end_dt - timedelta(days=30)
+        start_date = start_dt.strftime("%Y-%m-%d")
+    else:
+        start_dt = datetime.fromisoformat(start_date)
+
+    # Get resources and metrics
+    resources = await resource_repo.get_all_active(subscription_ids=subscription_ids)
+    latest_metrics = await metrics_repo.get_latest_for_all_resources(
+        subscription_ids=subscription_ids
+    )
+    metrics_map = {m.resource_id: m for m in latest_metrics}
+
+    # Build resource list with metrics
+    resource_list = []
+    for r in resources:
+        metric = metrics_map.get(r.id)
+        resource_list.append({
+            "resource": r,
+            "metric": metric,
+        })
+
+    # Calculate summary
+    summary = await metrics_repo.get_compliance_summary(
+        start_time=start_dt,
+        end_time=end_dt,
+        subscription_ids=subscription_ids,
+    )
+
+    # Get breaches
+    breaches = [
+        {
+            "resource_name": resource_list[i]["resource"].name if i < len(resource_list) else "Unknown",
+            "resource_type": resource_list[i]["resource"].type if i < len(resource_list) else "Unknown",
+            "availability_percent": m.availability_percent,
+            "sla_target": m.sla_target,
+        }
+        for i, m in enumerate(latest_metrics)
+        if m.compliance_status == "BREACH"
+    ]
+
+    return templates.TemplateResponse(
+        request,
+        "report_print.html",
+        {
+            "report_date": datetime.utcnow().strftime("%B %d, %Y"),
+            "start_date": start_dt.strftime("%B %d, %Y"),
+            "end_date": end_dt.strftime("%B %d, %Y"),
+            "generated_at": datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC"),
+            "total_resources": len(resources),
+            "summary": summary,
+            "breaches": breaches,
+            "resources": resource_list,
+        },
+    )
