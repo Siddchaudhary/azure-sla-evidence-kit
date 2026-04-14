@@ -16,6 +16,7 @@ from azsla.db.repository import (
     DashboardCacheRepository,
     SLAHistoryRepository,
 )
+from azsla.web.app import get_templates, APP_VERSION
 from azsla.web.app import get_templates
 
 router = APIRouter()
@@ -95,6 +96,11 @@ async def dashboard(
         history_repo = SLAHistoryRepository(db)
         trend_data = await history_repo.get_trend(days=30)
 
+    # Get last refresh timestamp
+    run_repo = CollectionRunRepository(db)
+    latest_runs = await run_repo.get_latest(limit=1)
+    last_refresh = latest_runs[0].completed_at if latest_runs and latest_runs[0].completed_at else None
+
     return templates.TemplateResponse(
         request,
         "dashboard.html",
@@ -112,6 +118,8 @@ async def dashboard(
             "breaches": breaches,
             "trend_data": trend_data,
             "cached": cached is not None,  # Flag to show cache status
+            "last_refresh": last_refresh,
+            "version": APP_VERSION,
         },
     )
 

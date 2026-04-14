@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import AsyncGenerator
 
 from fastapi import FastAPI
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -14,6 +15,9 @@ from azsla.web.config import get_settings
 from azsla.web.scheduler import start_scheduler, stop_scheduler
 
 logger = logging.getLogger(__name__)
+
+# Application version
+APP_VERSION = "0.1.0"
 
 # Paths
 WEB_DIR = Path(__file__).parent
@@ -93,7 +97,7 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title=settings.app_name,
         description="Real-time Azure SLA monitoring and compliance dashboard",
-        version="0.1.0",
+        version=APP_VERSION,
         docs_url="/api/docs",
         redoc_url="/api/redoc",
         lifespan=lifespan,
@@ -111,6 +115,26 @@ def create_app() -> FastAPI:
 
     app.include_router(api_router, prefix="/api")
     app.include_router(views_router)
+
+    # Health check endpoints
+    @app.get("/health", tags=["Health"])
+    async def health_check():
+        """Basic health check - returns 200 if the app is running."""
+        return JSONResponse({"status": "healthy", "version": APP_VERSION})
+
+    @app.get("/ready", tags=["Health"])
+    async def readiness_check():
+        """Readiness check - verifies database connectivity."""
+        try:
+            from azsla.db.database import AsyncSessionLocal
+            async with AsyncSessionLocal() as session:
+                await session.execute("SELECT 1")
+            return JSONResponse({"status": "ready", "database": "connected"})
+        except Exception as e:
+            return JSONResponse(
+                {"status": "not_ready", "database": "disconnected", "error": str(e)},
+                status_code=503
+            )
 
     return app
 
