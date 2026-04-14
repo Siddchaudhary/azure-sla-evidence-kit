@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - Azure SLA{% endblock %}
+
+{% block content %}
+<div x-data="{ showAddModal: false, triggerModal: false }">
+    <!-- Header -->
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-900">Settings</h1>
+        <p class="text-gray-600">Manage subscriptions and data collection</p>
+    </div>
+    
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Subscriptions -->
+        <div class="bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                <h3 class="text-lg font-semibold text-gray-900">Monitored Subscriptions</h3>
+                <button @click="showAddModal = true" 
+                        class="px-3 py-1 bg-azure-500 text-white rounded-md hover:bg-azure-600 text-sm">
+                    + Add
+                </button>
+            </div>
+            
+            <div class="divide-y divide-gray-200">
+                {% for sub in subscriptions %}
+                <div class="px-6 py-4 flex items-center justify-between hover:bg-gray-50">
+                    <div>
+                        <p class="font-medium text-gray-900">{{ sub.name or 'Unnamed' }}</p>
+                        <p class="text-sm text-gray-500 font-mono">{{ sub.id }}</p>
+                    </div>
+                    <button hx-delete="/api/subscriptions/{{ sub.id }}"
+                            hx-confirm="Remove this subscription from monitoring?"
+                            hx-swap="none"
+                            class="text-red-600 hover:text-red-800 text-sm">
+                        Remove
+                    </button>
+                </div>
+                {% else %}
+                <div class="px-6 py-12 text-center text-gray-500">
+                    <p>No subscriptions configured.</p>
+                    <button @click="showAddModal = true" class="text-azure-600 hover:underline mt-2">
+                        Add your first subscription
+                    </button>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Collection Controls -->
+        <div class="bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900">Data Collection</h3>
+            </div>
+            
+            <div class="p-6 space-y-4">
+                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div>
+                        <p class="font-medium">Collection Status</p>
+                        <p class="text-sm text-gray-500"
+                           hx-get="/api/collection/status" 
+                           hx-trigger="load, every 30s"
+                           hx-target="this">
+                            Loading...
+                        </p>
+                    </div>
+                    <button @click="triggerModal = true"
+                            class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600">
+                        Trigger Collection
+                    </button>
+                </div>
+                
+                <div>
+                    <p class="text-sm font-medium text-gray-700 mb-2">Collection Schedule</p>
+                    <p class="text-gray-600">Data is collected automatically every 6 hours.</p>
+                    <p class="text-gray-600">Each collection looks back 1 day for metrics.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Collection Runs -->
+    <div class="bg-white rounded-lg shadow mt-6">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-900">Recent Collection Runs</h3>
+        </div>
+        
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Started</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Resources</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Metrics</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Duration</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for run in recent_runs %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                        {{ run.started_at.strftime('%Y-%m-%d %H:%M:%S') }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {% if run.status == 'completed' %}
+                        <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">Completed</span>
+                        {% elif run.status == 'running' %}
+                        <span class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">Running</span>
+                        {% elif run.status == 'failed' %}
+                        <span class="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">Failed</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {{ run.resources_discovered }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {{ run.metrics_collected }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {% if run.completed_at %}
+                        {{ ((run.completed_at - run.started_at).total_seconds() / 60) | round(1) }} min
+                        {% else %}
+                        --
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" class="px-6 py-12 text-center text-gray-500">
+                        No collection runs yet.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Add Subscription Modal -->
+    <div x-show="showAddModal" x-cloak
+         class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4" @click.outside="showAddModal = false">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-semibold">Add Subscription</h3>
+            </div>
+            <form hx-post="/api/subscriptions" hx-swap="none" @htmx:after-request="showAddModal = false; location.reload()">
+                <div class="p-6 space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Subscription ID</label>
+                        <input type="text" name="id" required
+                               placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                               class="w-full rounded-md border-gray-300 shadow-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Name (optional)</label>
+                        <input type="text" name="name"
+                               placeholder="Production Subscription"
+                               class="w-full rounded-md border-gray-300 shadow-sm">
+                    </div>
+                </div>
+                <div class="px-6 py-4 border-t border-gray-200 flex justify-end gap-2 bg-gray-50">
+                    <button type="button" @click="showAddModal = false"
+                            class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                            class="px-4 py-2 bg-azure-500 text-white rounded-md hover:bg-azure-600">
+                        Add Subscription
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Trigger Collection Modal -->
+    <div x-show="triggerModal" x-cloak
+         class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4" @click.outside="triggerModal = false">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-semibold">Trigger Data Collection</h3>
+            </div>
+            <form hx-post="/api/collection/trigger" hx-swap="none" @htmx:after-request="triggerModal = false; location.reload()">
+                <div class="p-6 space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Lookback Days</label>
+                        <input type="number" name="lookback_days" value="1" min="1" max="30"
+                               class="w-full rounded-md border-gray-300 shadow-sm">
+                        <p class="text-xs text-gray-500 mt-1">How many days of historic data to collect</p>
+                    </div>
+                </div>
+                <div class="px-6 py-4 border-t border-gray-200 flex justify-end gap-2 bg-gray-50">
+                    <button type="button" @click="triggerModal = false"
+                            class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                            class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600">
+                        Start Collection
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

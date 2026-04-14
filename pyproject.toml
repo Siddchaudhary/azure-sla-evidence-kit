@@ -1,0 +1,104 @@
+[project]
+name = "azure-sla-report-generator"
+version = "0.1.0"
+description = "CLI tool to discover Azure resources and generate SLA compliance reports"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.11"
+authors = [
+    { name = "Your Name", email = "you@example.com" }
+]
+keywords = ["azure", "sla", "monitoring", "compliance", "reporting"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: System :: Monitoring",
+]
+
+dependencies = [
+    "azure-identity>=1.15.0",
+    "azure-mgmt-resourcegraph>=8.0.0",
+    "azure-mgmt-monitor>=7.0.0",
+    "azure-mgmt-subscription>=3.0.0",
+    "azure-monitor-query>=1.2.0",
+    "azure-storage-blob>=12.19.0",
+    "typer>=0.9.0",
+    "rich>=13.0.0",
+    "pydantic>=2.5.0",
+    "pydantic-settings>=2.0.0",
+    "pyyaml>=6.0.0",
+    "jinja2>=3.1.0",
+    "python-dateutil>=2.8.0",
+    # Web application
+    "fastapi>=0.109.0",
+    "uvicorn[standard]>=0.27.0",
+    "sqlalchemy>=2.0.0",
+    "aiosqlite>=0.19.0",
+    "apscheduler>=3.10.0",
+    "httpx>=0.26.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "pytest-asyncio>=0.23.0",
+    "mypy>=1.8.0",
+    "ruff>=0.1.0",
+    "types-PyYAML>=6.0.0",
+    "types-python-dateutil>=2.8.0",
+]
+postgres = [
+    "asyncpg>=0.29.0",
+    "psycopg2-binary>=2.9.0",
+]
+charts = [
+    "matplotlib>=3.8.0",
+]
+
+[project.scripts]
+azsla = "azsla.cli:app"
+azsla-web = "azsla.web.main:run"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/azsla"]
+
+[tool.hatch.build.targets.wheel.shared-data]
+"slas" = "share/azsla/slas"
+"templates" = "share/azsla/templates"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "src/",
+    "slas/",
+    "templates/",
+    "tests/",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP", "B", "C4", "SIM"]
+ignore = ["E501"]

@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block title %}Resources - Azure SLA{% endblock %}
+
+{% block content %}
+<div>
+    <!-- Header -->
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-900">Resources</h1>
+        <p class="text-gray-600">View and filter all monitored Azure resources</p>
+    </div>
+    
+    <!-- Filters -->
+    <div class="bg-white rounded-lg shadow p-4 mb-6">
+        <form method="get" class="flex flex-wrap gap-4 items-end">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Subscription</label>
+                <select name="subscription_id" class="rounded-md border-gray-300 shadow-sm text-sm w-48">
+                    <option value="">All Subscriptions</option>
+                    {% for sub in subscriptions %}
+                    <option value="{{ sub.id }}" {% if sub.id == selected_subscription %}selected{% endif %}>
+                        {{ sub.name or sub.id[:8] }}...
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Resource Type</label>
+                <select name="resource_type" class="rounded-md border-gray-300 shadow-sm text-sm w-48">
+                    <option value="">All Types</option>
+                    {% for rt in resource_types %}
+                    <option value="{{ rt }}" {% if rt == selected_type %}selected{% endif %}>
+                        {{ rt.split('/')[-1] }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                <select name="location" class="rounded-md border-gray-300 shadow-sm text-sm w-40">
+                    <option value="">All Locations</option>
+                    {% for loc in locations %}
+                    <option value="{{ loc }}" {% if loc == selected_location %}selected{% endif %}>
+                        {{ loc }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <select name="status" class="rounded-md border-gray-300 shadow-sm text-sm w-36">
+                    <option value="">All Status</option>
+                    <option value="COMPLIANT" {% if selected_status == 'COMPLIANT' %}selected{% endif %}>Compliant</option>
+                    <option value="BREACH" {% if selected_status == 'BREACH' %}selected{% endif %}>Breach</option>
+                    <option value="UNKNOWN" {% if selected_status == 'UNKNOWN' %}selected{% endif %}>Unknown</option>
+                </select>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Search</label>
+                <input type="text" name="search" value="{{ search or '' }}" placeholder="Resource name..."
+                       class="rounded-md border-gray-300 shadow-sm text-sm w-48">
+            </div>
+            
+            <button type="submit" class="px-4 py-2 bg-azure-500 text-white rounded-md hover:bg-azure-600 text-sm">
+                Apply Filters
+            </button>
+            
+            <a href="/resources" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 text-sm">
+                Clear
+            </a>
+        </form>
+    </div>
+    
+    <!-- Results Info -->
+    <div class="flex justify-between items-center mb-4">
+        <p class="text-gray-600 text-sm">
+            Showing {{ resources | length }} of {{ total }} resources
+        </p>
+    </div>
+    
+    <!-- Resources Table -->
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Resource</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Availability</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SLA Target</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for item in resources %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4">
+                        <a href="/resource/{{ item.resource.id }}" class="text-azure-600 hover:underline font-medium">
+                            {{ item.resource.name }}
+                        </a>
+                        <p class="text-xs text-gray-400 truncate max-w-xs">{{ item.resource.resource_group }}</p>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {{ item.resource.type.split('/')[-1] }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {{ item.resource.location }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {% if item.metric %}
+                            {% if item.metric.compliance_status == 'COMPLIANT' %}
+                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                                ✓ Compliant
+                            </span>
+                            {% elif item.metric.compliance_status == 'BREACH' %}
+                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">
+                                ✗ Breach
+                            </span>
+                            {% else %}
+                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
+                                ? Unknown
+                            </span>
+                            {% endif %}
+                        {% else %}
+                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-600">
+                                No Data
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {% if item.metric and item.metric.availability_percent >= 0 %}
+                            <span class="{% if item.metric.availability_percent >= 99.9 %}text-green-600{% elif item.metric.availability_percent >= 99 %}text-yellow-600{% else %}text-red-600{% endif %} font-medium">
+                                {{ item.metric.availability_percent | round(2) }}%
+                            </span>
+                        {% else %}
+                            <span class="text-gray-400">--</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {% if item.metric and item.metric.sla_target %}
+                            {{ item.metric.sla_target | round(2) }}%
+                        {% else %}
+                            --
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="px-6 py-12 text-center text-gray-500">
+                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                  d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <p class="mt-2 text-sm">No resources found matching your criteria.</p>
+                        <a href="/resources" class="text-azure-600 hover:underline text-sm">Clear filters</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Pagination -->
+    {% if total_pages > 1 %}
+    <div class="flex justify-center mt-6 gap-2">
+        {% if page > 1 %}
+        <a href="?page={{ page - 1 }}&subscription_id={{ selected_subscription or '' }}&resource_type={{ selected_type or '' }}&location={{ selected_location or '' }}&status={{ selected_status or '' }}&search={{ search or '' }}" 
+           class="px-3 py-2 bg-white border rounded-md hover:bg-gray-50">
+            ← Previous
+        </a>
+        {% endif %}
+        
+        <span class="px-3 py-2 text-gray-600">
+            Page {{ page }} of {{ total_pages }}
+        </span>
+        
+        {% if page < total_pages %}
+        <a href="?page={{ page + 1 }}&subscription_id={{ selected_subscription or '' }}&resource_type={{ selected_type or '' }}&location={{ selected_location or '' }}&status={{ selected_status or '' }}&search={{ search or '' }}" 
+           class="px-3 py-2 bg-white border rounded-md hover:bg-gray-50">
+            Next →
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,758 @@
+{% extends "base.html" %}
+
+{% block title %}SLA Compliance Dashboard - Microsoft Azure{% endblock %}
+{% block breadcrumb %}SLA Dashboard{% endblock %}
+
+{% block content %}
+<div x-data="{ 
+    ...subscriptionFilterComponent(),
+    essentialsOpen: true,
+    activeTab: 'overview'
+}" x-init="init()">
+    
+    <!-- Resource Header - Azure Portal Style -->
+    <div class="bg-white border-b border-portal-border">
+        <div class="px-6 py-4">
+            <div class="flex items-start gap-4">
+                <!-- Resource Icon -->
+                <div class="w-12 h-12 bg-[#0078d4] rounded flex items-center justify-center flex-shrink-0">
+                    <svg class="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                </div>
+                
+                <!-- Resource Info -->
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-3">
+                        <h1 class="text-xl font-semibold text-portal-text">SLA Compliance Dashboard</h1>
+                        <button class="p-1 text-portal-textSec hover:bg-black/5 rounded">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                            </svg>
+                        </button>
+                        <button class="p-1 text-portal-textSec hover:bg-black/5 rounded">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                            </svg>
+                        </button>
+                    </div>
+                    <p class="text-[13px] text-portal-textSec">SLA Dashboard</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Command Bar - Azure Portal Style -->
+        <div class="px-4 py-1 border-t border-portal-border flex items-center gap-1 overflow-x-auto">
+            <button type="button" hx-post="/api/collection/trigger" hx-swap="none"
+                    @click="refreshing = true; setTimeout(() => { refreshing = false; location.reload(); }, 20000)"
+                    class="cmd-btn cmd-btn-primary">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                <span x-text="refreshing ? 'Collecting...' : 'Refresh'">Refresh</span>
+            </button>
+            
+            <div class="w-px h-6 bg-portal-border mx-1"></div>
+            
+            <a href="/resources" class="cmd-btn">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                </svg>
+                View all resources
+            </a>
+            
+            <button type="button" class="cmd-btn" onclick="window.print()">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Export
+            </button>
+            
+            <a href="/api/docs" target="_blank" class="cmd-btn">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+                API Docs
+            </a>
+            
+            <div class="flex-1"></div>
+            
+            <button class="cmd-btn">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
+                </svg>
+            </button>
+        </div>
+    </div>
+    
+    <div class="flex">
+        <!-- Secondary Navigation - Azure Portal Style -->
+        <nav class="hidden lg:block w-52 bg-white border-r border-portal-border flex-shrink-0">
+            <div class="py-2">
+                <a href="#" @click.prevent="activeTab = 'overview'" 
+                   :class="activeTab === 'overview' ? 'bg-[#e6f2fb] border-l-2 border-azure-500' : 'hover:bg-portal-bg'"
+                   class="flex items-center gap-3 px-4 py-2 text-[13px] text-portal-text">
+                    <svg class="w-4 h-4 text-azure-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                    </svg>
+                    Overview
+                </a>
+                
+                <div class="mt-4 pt-4 border-t border-portal-border">
+                    <button class="flex items-center justify-between w-full px-4 py-1 text-[11px] font-semibold text-portal-textSec uppercase">
+                        <span>Settings</span>
+                        <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                </div>
+                <a href="/settings" class="flex items-center gap-3 px-4 py-2 text-[13px] text-portal-text hover:bg-portal-bg">
+                    <svg class="w-4 h-4 text-portal-textSec" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    Configuration
+                </a>
+            </div>
+        </nav>
+        
+        <!-- Main Content Area -->
+        <div class="flex-1 p-6 overflow-y-auto">
+            <!-- Essentials Panel - Azure Portal Style -->
+            <div class="bg-white rounded border border-portal-border shadow-azure mb-6">
+                <button @click="essentialsOpen = !essentialsOpen" 
+                        class="flex items-center justify-between w-full px-4 py-3 hover:bg-portal-bg">
+                    <span class="text-[13px] font-semibold text-portal-text">Essentials</span>
+                    <svg class="w-4 h-4 text-portal-textSec transition-transform" :class="{'rotate-180': !essentialsOpen}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </button>
+                
+                <div x-show="essentialsOpen" x-collapse class="border-t border-portal-border">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-3 p-4 text-[13px]">
+                        <div class="flex flex-col">
+                            <span class="text-portal-textSec">Total Resources</span>
+                            <span class="text-portal-text font-medium">{{ total_resources }}</span>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-portal-textSec">Subscriptions</span>
+                            <span class="text-portal-text font-medium">{{ total_subscriptions }}</span>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-portal-textSec">Compliant</span>
+                            <span class="text-green-600 font-medium">{{ summary.compliant or 0 }} resources</span>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-portal-textSec">Breaches</span>
+                            <span class="{% if summary.breach %}text-red-600{% else %}text-portal-text{% endif %} font-medium">{{ summary.breach or 0 }} resources</span>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-portal-textSec">Average Availability</span>
+                            <span class="text-portal-text font-medium">{% if summary.avg_availability %}{{ summary.avg_availability | round(2) }}%{% else %}—{% endif %}</span>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-portal-textSec">Date Range</span>
+                            <span class="text-portal-text font-medium">{{ start_date }} to {{ end_date }}</span>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-portal-textSec">Resource Types</span>
+                            <span class="text-portal-text font-medium">{{ resource_types | length }} types</span>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-portal-textSec">Locations</span>
+                            <span class="text-portal-text font-medium">{{ locations | length }} regions</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tabs - Azure Portal Style -->
+            <div class="border-b border-portal-border mb-4">
+                <div class="flex gap-0">
+                    <button @click="activeTab = 'overview'"
+                            :class="activeTab === 'overview' ? 'border-b-2 border-azure-500 text-azure-500' : 'text-portal-textSec hover:text-portal-text hover:border-b-2 hover:border-portal-border'"
+                            class="px-4 py-2 text-[13px] font-medium -mb-px">
+                        Overview
+                    </button>
+                    <button @click="activeTab = 'breaches'"
+                            :class="activeTab === 'breaches' ? 'border-b-2 border-azure-500 text-azure-500' : 'text-portal-textSec hover:text-portal-text hover:border-b-2 hover:border-portal-border'"
+                            class="px-4 py-2 text-[13px] font-medium -mb-px flex items-center gap-1.5">
+                        Breaches
+                        {% if summary.breach %}<span class="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">{{ summary.breach }}</span>{% endif %}
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Filter Chips - Azure Portal Style -->
+            <form id="filterForm" method="get" class="mb-4">
+                <div id="hiddenSubInputs" x-effect="
+                    const container = document.getElementById('hiddenSubInputs');
+                    container.innerHTML = '';
+                    selected.forEach(subId => {
+                        const input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = 'sub';
+                        input.value = subId;
+                        container.appendChild(input);
+                    });
+                "></div>
+                
+                <div class="flex flex-wrap items-center gap-2">
+                    <!-- Filter input -->
+                    <div class="relative">
+                        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-portal-textSec" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                        </svg>
+                        <input type="text" placeholder="Filter for any field..." class="w-48 pl-10 pr-3 py-1.5 text-[13px] border border-portal-border rounded focus:border-azure-500 bg-white">
+                    </div>
+                    
+                    <!-- Subscription filter chip -->
+                    <div class="relative" @click.away="filterOpen = false">
+                        <button type="button" @click="filterOpen = !filterOpen" class="filter-chip">
+                            <span>Subscription</span>
+                            <span class="font-medium" x-text="selected.length === 0 || selected.length === subscriptions.length ? 'all' : selected.length + ' selected'">all</span>
+                            <span class="remove" @click.stop="clearAll()">&times;</span>
+                        </button>
+                        
+                        <!-- Dropdown -->
+                        <div x-show="filterOpen" x-cloak x-transition
+                             class="absolute left-0 z-50 mt-1 w-72 bg-white rounded shadow-azure-lg border border-portal-border">
+                            <div class="p-2 border-b border-portal-border">
+                                <input type="text" x-model="search" placeholder="Search..."
+                                       class="w-full px-2 py-1.5 text-[13px] border border-portal-border rounded">
+                            </div>
+                            <div class="p-1 border-b border-portal-border flex gap-2 text-[12px]">
+                                <button type="button" @click="selectAll()" class="text-azure-500 hover:underline px-1">Select all</button>
+                                <span class="text-portal-textSec">|</span>
+                                <button type="button" @click="clearAll()" class="text-azure-500 hover:underline px-1">Clear all</button>
+                            </div>
+                            <div class="max-h-48 overflow-y-auto">
+                                <template x-for="sub in getFilteredSubscriptions()" :key="sub.id">
+                                    <label class="flex items-center gap-2 px-3 py-2 hover:bg-portal-bg cursor-pointer text-[13px]">
+                                        <input type="checkbox" :checked="isSelected(sub.id)" @change="toggle(sub.id)"
+                                               class="w-4 h-4 text-azure-500 border-portal-border rounded">
+                                        <span class="truncate" x-text="sub.name"></span>
+                                    </label>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Date range chip -->
+                    <div class="filter-chip">
+                        <span>Period</span>
+                        <input type="date" name="start_date" value="{{ start_date }}" class="border-0 p-0 text-[13px] bg-transparent w-24">
+                        <span>-</span>
+                        <input type="date" name="end_date" value="{{ end_date }}" class="border-0 p-0 text-[13px] bg-transparent w-24">
+                    </div>
+                    
+                    <!-- Add filter button -->
+                    <button type="submit" class="filter-chip text-azure-500 border-azure-500">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        Apply
+                    </button>
+                </div>
+            </form>
+            
+            <!-- Overview Tab Content -->
+            <div x-show="activeTab === 'overview'">
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    {% set total = (summary.compliant or 0) + (summary.breach or 0) + (summary.unknown or 0) %}
+                    {% set compliant_pct = ((summary.compliant or 0) / total * 100) if total > 0 else 0 %}
+                    
+                    <!-- Compliance Rate Card -->
+                    <div class="bg-white rounded border border-portal-border shadow-azure p-4">
+                        <div class="text-[12px] text-portal-textSec uppercase tracking-wide mb-2">Compliance Rate</div>
+                        <div class="flex items-end gap-2">
+                            <span class="text-3xl font-semibold {% if compliant_pct >= 99 %}text-green-600{% elif compliant_pct >= 95 %}text-yellow-600{% else %}text-red-600{% endif %}">
+                                {{ compliant_pct | round(1) }}%
+                            </span>
+                        </div>
+                        <div class="mt-3 h-2 bg-gray-100 rounded-full overflow-hidden">
+                            <div class="h-full bg-green-500" style="width: {{ compliant_pct }}%"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Compliant -->
+                    <div class="bg-white rounded border border-portal-border shadow-azure p-4">
+                        <div class="text-[12px] text-portal-textSec uppercase tracking-wide mb-2">Compliant</div>
+                        <div class="flex items-baseline gap-2">
+                            <span class="text-3xl font-semibold text-green-600">{{ summary.compliant or 0 }}</span>
+                            <span class="text-[13px] text-portal-textSec">resources</span>
+                        </div>
+                        <div class="mt-2 text-[12px] text-green-600">✓ Meeting SLA targets</div>
+                    </div>
+                    
+                    <!-- Breaches -->
+                    <div class="bg-white rounded border border-portal-border shadow-azure p-4">
+                        <div class="text-[12px] text-portal-textSec uppercase tracking-wide mb-2">Breaches</div>
+                        <div class="flex items-baseline gap-2">
+                            <span class="text-3xl font-semibold {% if summary.breach %}text-red-600{% else %}text-portal-text{% endif %}">{{ summary.breach or 0 }}</span>
+                            <span class="text-[13px] text-portal-textSec">resources</span>
+                        </div>
+                        <div class="mt-2 text-[12px] {% if summary.breach %}text-red-600{% else %}text-portal-textSec{% endif %}">
+                            {% if summary.breach %}⚠ Below SLA targets{% else %}✓ No breaches{% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Avg Availability -->
+                    <div class="bg-white rounded border border-portal-border shadow-azure p-4">
+                        <div class="text-[12px] text-portal-textSec uppercase tracking-wide mb-2">Avg Availability</div>
+                        <div class="flex items-baseline gap-2">
+                            <span class="text-3xl font-semibold text-azure-500">
+                                {% if summary.avg_availability %}{{ summary.avg_availability | round(2) }}{% else %}—{% endif %}
+                            </span>
+                            <span class="text-[13px] text-portal-textSec">{% if summary.avg_availability %}%{% endif %}</span>
+                        </div>
+                        <div class="mt-2 text-[12px] text-portal-textSec">Across all resources</div>
+                    </div>
+                </div>
+                
+                <!-- Charts Row -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+                    <!-- Trend Chart -->
+                    <div class="bg-white rounded border border-portal-border shadow-azure">
+                        <div class="px-4 py-3 border-b border-portal-border flex items-center justify-between">
+                            <h3 class="text-[14px] font-semibold text-portal-text">SLA Trend</h3>
+                            <div class="flex items-center gap-2">
+                                <select id="trendPeriod" onchange="updateTrendChart(this.value)" class="text-[12px] border border-portal-border rounded px-2 py-1 bg-white">
+                                    <option value="7">7 days</option>
+                                    <option value="30" selected>30 days</option>
+                                    <option value="90">90 days</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="p-4" x-ignore>
+                            {% if trend_data and trend_data | length > 0 %}
+                            <canvas id="trendChart" height="220"></canvas>
+                            {% else %}
+                            <div class="h-[220px] flex flex-col items-center justify-center text-portal-textSec">
+                                <svg class="w-12 h-12 mb-2 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                                </svg>
+                                <p class="text-[13px]">Trend data will appear after multiple collection runs</p>
+                                <p class="text-[11px] mt-1">Data is collected every 6 hours</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Compliance Distribution -->
+                    <div class="bg-white rounded border border-portal-border shadow-azure">
+                        <div class="px-4 py-3 border-b border-portal-border">
+                            <h3 class="text-[14px] font-semibold text-portal-text">Compliance Distribution</h3>
+                        </div>
+                        <div class="p-4">
+                            {% if total > 0 %}
+                            <div class="flex items-center gap-6">
+                                <!-- Donut visualization -->
+                                <div class="relative w-32 h-32 flex-shrink-0">
+                                    <svg class="w-32 h-32 transform -rotate-90" viewBox="0 0 100 100">
+                                        <circle cx="50" cy="50" r="40" fill="none" stroke="#e5e7eb" stroke-width="12"/>
+                                        <circle cx="50" cy="50" r="40" fill="none" stroke="#22c55e" stroke-width="12"
+                                                stroke-dasharray="{{ compliant_pct * 2.51 }} 251" stroke-linecap="round"/>
+                                    </svg>
+                                    <div class="absolute inset-0 flex flex-col items-center justify-center">
+                                        <span class="text-2xl font-bold text-portal-text">{{ compliant_pct | round(0) }}%</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="space-y-3 text-[13px]">
+                                    <div class="flex items-center gap-3">
+                                        <span class="w-3 h-3 rounded-full bg-green-500"></span>
+                                        <span class="text-portal-textSec">Compliant</span>
+                                        <span class="font-medium text-portal-text ml-auto">{{ summary.compliant or 0 }}</span>
+                                    </div>
+                                    <div class="flex items-center gap-3">
+                                        <span class="w-3 h-3 rounded-full bg-red-500"></span>
+                                        <span class="text-portal-textSec">Breach</span>
+                                        <span class="font-medium text-portal-text ml-auto">{{ summary.breach or 0 }}</span>
+                                    </div>
+                                    <div class="flex items-center gap-3">
+                                        <span class="w-3 h-3 rounded-full bg-yellow-500"></span>
+                                        <span class="text-portal-textSec">Unknown</span>
+                                        <span class="font-medium text-portal-text ml-auto">{{ summary.unknown or 0 }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="h-48 flex items-center justify-center text-portal-textSec text-[13px]">
+                                No compliance data available
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Compliance Trend Chart (Full Width) -->
+                {% if trend_data and trend_data | length > 1 %}
+                <div class="bg-white rounded border border-portal-border shadow-azure mb-6">
+                    <div class="px-4 py-3 border-b border-portal-border flex items-center justify-between">
+                        <h3 class="text-[14px] font-semibold text-portal-text">Compliance Trend</h3>
+                        <div class="flex items-center gap-4 text-[11px]">
+                            <span class="flex items-center gap-1.5">
+                                <span class="w-3 h-1.5 rounded bg-green-500"></span>
+                                Compliant
+                            </span>
+                            <span class="flex items-center gap-1.5">
+                                <span class="w-3 h-1.5 rounded bg-red-500"></span>
+                                Breach
+                            </span>
+                        </div>
+                    </div>
+                    <div class="p-4" x-ignore>
+                        <canvas id="complianceTrendChart" height="150"></canvas>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Breaches Tab Content -->
+            <div x-show="activeTab === 'breaches'">
+                {% if breaches %}
+                <div class="bg-white rounded border border-portal-border shadow-azure overflow-hidden">
+                    <table class="w-full azure-table">
+                        <thead>
+                            <tr>
+                                <th class="w-8"><input type="checkbox" class="w-4 h-4"></th>
+                                <th>Name</th>
+                                <th>Type</th>
+                                <th>Availability</th>
+                                <th>SLA Target</th>
+                                <th>Gap</th>
+                                <th class="w-8"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for metric in breaches[:15] %}
+                            <tr>
+                                <td><input type="checkbox" class="w-4 h-4"></td>
+                                <td>
+                                    <a href="/resource/{{ metric.resource_id if metric.resource_id is defined else metric['resource_id'] }}" class="azure-link font-medium">
+                                        {% if metric.resource is defined %}
+                                            {{ metric.resource.name if metric.resource else metric.resource_id.split('/')[-1] }}
+                                        {% else %}
+                                            {{ metric.resource_name if metric.resource_name is defined else metric['resource_name'] }}
+                                        {% endif %}
+                                    </a>
+                                </td>
+                                <td class="text-portal-textSec">
+                                    {% if metric.resource is defined %}
+                                        {{ metric.resource.type.split('/')[-1] if metric.resource else 'Unknown' }}
+                                    {% else %}
+                                        {{ metric.resource_type if metric.resource_type is defined else metric['resource_type'] }}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="text-red-600 font-medium">
+                                        {{ (metric.availability_percent if metric.availability_percent is defined else metric['availability_percent']) | round(2) }}%
+                                    </span>
+                                </td>
+                                <td class="text-portal-textSec">{{ (metric.sla_target if metric.sla_target is defined else metric['sla_target']) | round(2) }}%</td>
+                                <td class="text-red-600">-{{ ((metric.sla_target if metric.sla_target is defined else metric['sla_target']) - (metric.availability_percent if metric.availability_percent is defined else metric['availability_percent'])) | round(2) }}%</td>
+                                <td>
+                                    <button class="p-1 hover:bg-portal-bg rounded">
+                                        <svg class="w-4 h-4 text-portal-textSec" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
+                                        </svg>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    
+                    <div class="px-4 py-2 border-t border-portal-border text-[12px] text-portal-textSec">
+                        Showing 1 - {{ [breaches | length, 15] | min }} of {{ breaches | length }}
+                    </div>
+                </div>
+                {% else %}
+                <div class="bg-white rounded border border-portal-border shadow-azure p-8 text-center">
+                    <svg class="w-12 h-12 mx-auto text-green-500 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <h3 class="text-[14px] font-semibold text-portal-text">All Clear</h3>
+                    <p class="text-[13px] text-portal-textSec mt-1">No SLA breaches detected in the selected time range</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function subscriptionFilterComponent() {
+        return {
+            refreshing: false,
+            filterOpen: false,
+            search: '',
+            selected: {{ selected_subscription_ids | tojson | safe }},
+            subscriptions: {{ subscriptions_json | tojson | safe }},
+            
+            init() {
+                if (!Array.isArray(this.selected)) this.selected = [];
+            },
+            
+            getFilteredSubscriptions() {
+                const term = this.search.toLowerCase();
+                return this.subscriptions.filter(s => 
+                    (s.name || '').toLowerCase().includes(term) || 
+                    (s.id || '').toLowerCase().includes(term)
+                );
+            },
+            
+            toggle(id) {
+                const idx = this.selected.indexOf(id);
+                idx > -1 ? this.selected.splice(idx, 1) : this.selected.push(id);
+            },
+            
+            isSelected(id) { return this.selected.includes(id); },
+            selectAll() { this.selected = this.subscriptions.map(s => s.id); },
+            clearAll() { this.selected = []; },
+            
+            getDisplayText() {
+                if (this.selected.length === 0 || this.selected.length === this.subscriptions.length) return 'All Subscriptions';
+                if (this.selected.length === 1) {
+                    const sub = this.subscriptions.find(s => s.id === this.selected[0]);
+                    return sub ? (sub.name || sub.id.substring(0, 8) + '...') : '1 selected';
+                }
+                return this.selected.length + ' selected';
+            }
+        }
+    }
+
+    let trendChart = null;
+    const allTrendData = {{ trend_data | tojson | safe }};
+
+    function createTrendChart(data) {
+        const canvas = document.getElementById('trendChart');
+        if (!canvas || !data || data.length === 0) return;
+
+        if (trendChart) {
+            trendChart.destroy();
+        }
+
+        const labels = data.map(d => {
+            const date = new Date(d.date);
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        });
+
+        const datasets = [
+            {
+                label: 'Avg Availability',
+                data: data.map(d => d.avg_availability),
+                borderColor: '#0078d4',
+                backgroundColor: 'rgba(0, 120, 212, 0.1)',
+                fill: true,
+                tension: 0.3,
+                pointRadius: 3,
+                pointHoverRadius: 5,
+                pointBackgroundColor: '#0078d4',
+                borderWidth: 2
+            },
+            {
+                label: 'SLA Target (99.9%)',
+                data: data.map(() => 99.9),
+                borderColor: '#d13438',
+                borderDash: [5, 5],
+                pointRadius: 0,
+                borderWidth: 2,
+                fill: false
+            }
+        ];
+
+        // Add min/max band if data available
+        const hasMinMax = data.some(d => d.min_availability !== null && d.max_availability !== null);
+        if (hasMinMax) {
+            datasets.push({
+                label: 'Max',
+                data: data.map(d => d.max_availability),
+                borderColor: 'rgba(34, 197, 94, 0.5)',
+                borderWidth: 1,
+                pointRadius: 0,
+                fill: false
+            });
+            datasets.push({
+                label: 'Min',
+                data: data.map(d => d.min_availability),
+                borderColor: 'rgba(239, 68, 68, 0.5)',
+                borderWidth: 1,
+                pointRadius: 0,
+                fill: '-1',
+                backgroundColor: 'rgba(239, 68, 68, 0.05)'
+            });
+        }
+
+        trendChart = new Chart(canvas.getContext('2d'), {
+            type: 'line',
+            data: { labels, datasets },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { intersect: false, mode: 'index' },
+                plugins: {
+                    legend: { 
+                        position: 'bottom',
+                        labels: { 
+                            usePointStyle: true, 
+                            padding: 12,
+                            font: { size: 11 },
+                            filter: (item) => item.text !== 'Max' && item.text !== 'Min'
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(255,255,255,0.95)',
+                        titleColor: '#323130',
+                        bodyColor: '#605e5c',
+                        borderColor: '#edebe9',
+                        borderWidth: 1,
+                        padding: 12,
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (context.parsed.y !== null) {
+                                    label += ': ' + context.parsed.y.toFixed(2) + '%';
+                                }
+                                return label;
+                            },
+                            afterBody: function(tooltipItems) {
+                                const idx = tooltipItems[0].dataIndex;
+                                const d = data[idx];
+                                const lines = [];
+                                if (d.compliance_rate !== null) {
+                                    lines.push('Compliance Rate: ' + d.compliance_rate.toFixed(1) + '%');
+                                }
+                                if (d.compliant !== null && d.breach !== null) {
+                                    lines.push('Compliant: ' + d.compliant + ' | Breach: ' + d.breach);
+                                }
+                                return lines;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: { 
+                        min: function(context) {
+                            const minVal = Math.min(...data.map(d => d.min_availability || d.avg_availability || 100));
+                            return Math.max(90, Math.floor(minVal - 1));
+                        },
+                        max: 100.1,
+                        grid: { color: '#f3f2f1' },
+                        ticks: { 
+                            font: { size: 11 },
+                            callback: (value) => value + '%'
+                        }
+                    },
+                    x: { 
+                        grid: { display: false },
+                        ticks: { 
+                            font: { size: 10 },
+                            maxRotation: 45,
+                            minRotation: 0
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    async function updateTrendChart(days) {
+        try {
+            const response = await fetch(`/api/dashboard/trend?days=${days}`);
+            if (response.ok) {
+                const data = await response.json();
+                if (data.length > 0) {
+                    createTrendChart(data);
+                }
+            }
+        } catch (err) {
+            console.error('Failed to fetch trend data:', err);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        createTrendChart(allTrendData);
+        createComplianceTrendChart(allTrendData);
+    });
+
+    function createComplianceTrendChart(data) {
+        const canvas = document.getElementById('complianceTrendChart');
+        if (!canvas || !data || data.length < 2) return;
+
+        const labels = data.map(d => {
+            const date = new Date(d.date);
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        });
+
+        new Chart(canvas.getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [
+                    {
+                        label: 'Compliant',
+                        data: data.map(d => d.compliant || 0),
+                        backgroundColor: '#22c55e',
+                        borderRadius: 2
+                    },
+                    {
+                        label: 'Breach',
+                        data: data.map(d => d.breach || 0),
+                        backgroundColor: '#ef4444',
+                        borderRadius: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { intersect: false, mode: 'index' },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(255,255,255,0.95)',
+                        titleColor: '#323130',
+                        bodyColor: '#605e5c',
+                        borderColor: '#edebe9',
+                        borderWidth: 1,
+                        padding: 12,
+                        callbacks: {
+                            afterBody: function(tooltipItems) {
+                                const idx = tooltipItems[0].dataIndex;
+                                const d = data[idx];
+                                const total = (d.compliant || 0) + (d.breach || 0);
+                                if (total > 0) {
+                                    const rate = ((d.compliant || 0) / total * 100).toFixed(1);
+                                    return ['', 'Compliance Rate: ' + rate + '%'];
+                                }
+                                return [];
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        stacked: true,
+                        grid: { display: false },
+                        ticks: { font: { size: 10 } }
+                    },
+                    y: {
+                        stacked: true,
+                        beginAtZero: true,
+                        grid: { color: '#f3f2f1' },
+                        ticks: { 
+                            font: { size: 11 },
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        });
+    }
+</script>
+{% endblock %}

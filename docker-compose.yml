@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=sqlite+aiosqlite:////data/sla_data.db
+      - AZURE_SUBSCRIPTION_IDS=${AZURE_SUBSCRIPTION_IDS:-}
+      - AZURE_CLIENT_ID=${AZURE_CLIENT_ID:-}
+      - AZURE_CLIENT_SECRET=${AZURE_CLIENT_SECRET:-}
+      - AZURE_TENANT_ID=${AZURE_TENANT_ID:-}
+      - COLLECTION_ENABLED=true
+      - COLLECTION_INTERVAL_HOURS=6
+      - LOG_LEVEL=INFO
+    volumes:
+      - sla-data:/data
+    restart: unless-stopped
+
+volumes:
+  sla-data:

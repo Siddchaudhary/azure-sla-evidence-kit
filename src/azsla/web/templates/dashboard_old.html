@@ -1,0 +1,434 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Azure SLA{% endblock %}
+
+{% block content %}
+<div x-data="subscriptionFilterComponent()" x-init="init()" class="space-y-6">
+    
+    <!-- Page Header -->
+    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-900 tracking-tight">SLA Compliance Overview</h1>
+            <p class="mt-1 text-sm text-slate-500">Real-time availability monitoring across your Azure infrastructure</p>
+        </div>
+        
+        <!-- Filters Bar -->
+        <form id="filterForm" method="get" class="flex flex-wrap items-center gap-3">
+            <!-- Hidden inputs for subscriptions -->
+            <div id="hiddenSubInputs" x-effect="
+                const container = document.getElementById('hiddenSubInputs');
+                container.innerHTML = '';
+                selected.forEach(subId => {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'sub';
+                    input.value = subId;
+                    container.appendChild(input);
+                });
+            "></div>
+            
+            <!-- Subscription Filter -->
+            <div class="relative" @click.away="filterOpen = false">
+                <button type="button" @click="filterOpen = !filterOpen"
+                        class="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm">
+                    <svg class="w-4 h-4 text-azure-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    </svg>
+                    <span x-text="getDisplayText()" class="max-w-[140px] truncate"></span>
+                    <svg class="w-4 h-4 text-slate-400 transition-transform" :class="{'rotate-180': filterOpen}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </button>
+                
+                <!-- Dropdown -->
+                <div x-show="filterOpen" x-cloak x-transition
+                     class="absolute right-0 z-50 mt-2 w-80 bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden">
+                    <div class="p-3 border-b border-slate-100">
+                        <div class="relative">
+                            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                            <input type="text" x-model="search" placeholder="Search subscriptions..."
+                                   class="w-full pl-10 pr-4 py-2 text-sm border border-slate-200 rounded-lg focus:border-azure-500 focus:ring-2 focus:ring-azure-100">
+                        </div>
+                    </div>
+                    <div class="px-3 py-2 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
+                        <span class="text-xs text-slate-500" x-text="selected.length + ' of ' + subscriptions.length + ' selected'"></span>
+                        <div class="flex gap-2">
+                            <button type="button" @click="selectAll()" class="text-xs font-medium text-azure-600 hover:text-azure-700">All</button>
+                            <span class="text-slate-300">|</span>
+                            <button type="button" @click="clearAll()" class="text-xs font-medium text-azure-600 hover:text-azure-700">None</button>
+                        </div>
+                    </div>
+                    <div class="max-h-56 overflow-y-auto">
+                        <template x-for="sub in getFilteredSubscriptions()" :key="sub.id">
+                            <label class="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 cursor-pointer transition-colors">
+                                <input type="checkbox" :checked="isSelected(sub.id)" @change="toggle(sub.id)"
+                                       class="w-4 h-4 text-azure-500 border-slate-300 rounded focus:ring-azure-500">
+                                <div class="min-w-0 flex-1">
+                                    <p class="text-sm font-medium text-slate-900 truncate" x-text="sub.name"></p>
+                                    <p class="text-xs text-slate-400 font-mono truncate" x-text="sub.id"></p>
+                                </div>
+                            </label>
+                        </template>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Date Range -->
+            <div class="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-lg shadow-sm">
+                <input type="date" name="start_date" value="{{ start_date }}" 
+                       class="text-sm border-0 p-0 text-slate-700 focus:ring-0 bg-transparent">
+                <span class="text-slate-300">→</span>
+                <input type="date" name="end_date" value="{{ end_date }}" 
+                       class="text-sm border-0 p-0 text-slate-700 focus:ring-0 bg-transparent">
+            </div>
+            
+            <!-- Apply Button -->
+            <button type="submit" class="inline-flex items-center gap-2 px-4 py-2.5 bg-azure-500 text-white rounded-lg text-sm font-medium hover:bg-azure-600 transition-colors shadow-sm">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                </svg>
+                Apply
+            </button>
+            
+            <!-- Refresh Button -->
+            <button type="button" hx-post="/api/collection/trigger" hx-swap="none"
+                    @click="refreshing = true; setTimeout(() => { refreshing = false; location.reload(); }, 20000)"
+                    class="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-500 text-white rounded-lg text-sm font-medium hover:bg-emerald-600 transition-colors shadow-sm">
+                <svg x-show="!refreshing" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                <svg x-show="refreshing" x-cloak class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+                <span x-text="refreshing ? 'Collecting...' : 'Refresh'"></span>
+            </button>
+        </form>
+    </div>
+    
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Total Resources -->
+        <div class="group relative bg-white rounded-xl border border-slate-200 p-5 shadow-card card-interactive overflow-hidden">
+            <div class="absolute inset-0 bg-gradient-to-br from-azure-500/5 to-transparent"></div>
+            <div class="relative flex items-start justify-between">
+                <div>
+                    <p class="text-sm font-medium text-slate-500">Total Resources</p>
+                    <p class="mt-2 text-3xl font-bold text-slate-900">{{ total_resources }}</p>
+                    <p class="mt-1 text-xs text-slate-400">Monitored infrastructure</p>
+                </div>
+                <div class="w-12 h-12 rounded-xl gradient-azure flex items-center justify-center shadow-glow">
+                    <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Compliant -->
+        <div class="group relative bg-white rounded-xl border border-slate-200 p-5 shadow-card card-interactive overflow-hidden">
+            <div class="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent"></div>
+            <div class="relative flex items-start justify-between">
+                <div>
+                    <p class="text-sm font-medium text-slate-500">Compliant</p>
+                    <p class="mt-2 text-3xl font-bold text-emerald-600">{{ summary.compliant or 0 }}</p>
+                    {% if summary.total %}
+                    <p class="mt-1 text-xs text-emerald-600 font-medium">{{ ((summary.compliant or 0) / summary.total * 100) | round(1) }}% of total</p>
+                    {% else %}
+                    <p class="mt-1 text-xs text-slate-400">Meeting SLA targets</p>
+                    {% endif %}
+                </div>
+                <div class="w-12 h-12 rounded-xl gradient-success flex items-center justify-center">
+                    <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Breaches -->
+        <div class="group relative bg-white rounded-xl border border-slate-200 p-5 shadow-card card-interactive overflow-hidden">
+            <div class="absolute inset-0 bg-gradient-to-br from-red-500/5 to-transparent"></div>
+            <div class="relative flex items-start justify-between">
+                <div>
+                    <p class="text-sm font-medium text-slate-500">SLA Breaches</p>
+                    <p class="mt-2 text-3xl font-bold text-red-600">{{ summary.breach or 0 }}</p>
+                    {% if summary.total %}
+                    <p class="mt-1 text-xs text-red-600 font-medium">{{ ((summary.breach or 0) / summary.total * 100) | round(1) }}% below target</p>
+                    {% else %}
+                    <p class="mt-1 text-xs text-slate-400">Below SLA targets</p>
+                    {% endif %}
+                </div>
+                <div class="w-12 h-12 rounded-xl gradient-danger flex items-center justify-center">
+                    <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Avg Availability -->
+        <div class="group relative bg-white rounded-xl border border-slate-200 p-5 shadow-card card-interactive overflow-hidden">
+            <div class="absolute inset-0 bg-gradient-to-br from-violet-500/5 to-transparent"></div>
+            <div class="relative flex items-start justify-between">
+                <div>
+                    <p class="text-sm font-medium text-slate-500">Avg Availability</p>
+                    <p class="mt-2 text-3xl font-bold text-violet-600">
+                        {% if summary.avg_availability %}{{ summary.avg_availability | round(2) }}%{% else %}--{% endif %}
+                    </p>
+                    <p class="mt-1 text-xs text-slate-400">Across all resources</p>
+                </div>
+                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
+                    <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Charts Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Trend Chart -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-card overflow-hidden">
+            <div class="px-5 py-4 border-b border-slate-100">
+                <h3 class="font-semibold text-slate-900">Availability Trend</h3>
+                <p class="text-xs text-slate-500 mt-0.5">30-day performance overview</p>
+            </div>
+            <div class="p-5" x-ignore>
+                <canvas id="trendChart" height="220"></canvas>
+            </div>
+        </div>
+        
+        <!-- Compliance Distribution -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-card overflow-hidden">
+            <div class="px-5 py-4 border-b border-slate-100">
+                <h3 class="font-semibold text-slate-900">Compliance Distribution</h3>
+                <p class="text-xs text-slate-500 mt-0.5">Current status breakdown</p>
+            </div>
+            <div class="p-5">
+                {% set total = (summary.compliant or 0) + (summary.breach or 0) + (summary.unknown or 0) %}
+                {% set compliant_pct = ((summary.compliant or 0) / total * 100) if total > 0 else 0 %}
+                {% set breach_pct = ((summary.breach or 0) / total * 100) if total > 0 else 0 %}
+                {% set unknown_pct = ((summary.unknown or 0) / total * 100) if total > 0 else 0 %}
+                
+                {% if total > 0 %}
+                <!-- Progress Ring + Stats -->
+                <div class="flex items-center gap-8">
+                    <!-- Circular Progress -->
+                    <div class="relative w-32 h-32 flex-shrink-0">
+                        <svg class="w-32 h-32 transform -rotate-90" viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="40" fill="none" stroke="#f1f5f9" stroke-width="12"/>
+                            <circle cx="50" cy="50" r="40" fill="none" stroke="#22c55e" stroke-width="12"
+                                    stroke-dasharray="{{ compliant_pct * 2.51 }} 251" stroke-linecap="round"/>
+                            <circle cx="50" cy="50" r="40" fill="none" stroke="#ef4444" stroke-width="12"
+                                    stroke-dasharray="{{ breach_pct * 2.51 }} 251" stroke-dashoffset="-{{ compliant_pct * 2.51 }}" stroke-linecap="round"/>
+                        </svg>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center">
+                            <span class="text-2xl font-bold text-slate-900">{{ compliant_pct | round(0) }}%</span>
+                            <span class="text-xs text-slate-500">Compliant</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Legend -->
+                    <div class="flex-1 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-3 h-3 rounded-full bg-emerald-500"></div>
+                                <span class="text-sm text-slate-600">Compliant</span>
+                            </div>
+                            <span class="text-sm font-semibold text-slate-900">{{ summary.compliant or 0 }}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                                <span class="text-sm text-slate-600">Breach</span>
+                            </div>
+                            <span class="text-sm font-semibold text-slate-900">{{ summary.breach or 0 }}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-3 h-3 rounded-full bg-amber-500"></div>
+                                <span class="text-sm text-slate-600">Unknown</span>
+                            </div>
+                            <span class="text-sm font-semibold text-slate-900">{{ summary.unknown or 0 }}</span>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="flex flex-col items-center justify-center h-48 text-slate-400">
+                    <svg class="w-16 h-16 mb-3 text-slate-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    <p class="text-sm font-medium">No data available</p>
+                    <p class="text-xs mt-1">Click "Refresh" to collect data</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Breaches Table -->
+    {% if breaches %}
+    <div class="bg-white rounded-xl border border-slate-200 shadow-card overflow-hidden">
+        <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+            <div>
+                <h3 class="font-semibold text-slate-900 flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                    Active SLA Breaches
+                </h3>
+                <p class="text-xs text-slate-500 mt-0.5">Resources currently below target</p>
+            </div>
+            <a href="/resources?status=BREACH" class="text-sm font-medium text-azure-600 hover:text-azure-700">
+                View all →
+            </a>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="bg-slate-50 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                        <th class="px-5 py-3">Resource</th>
+                        <th class="px-5 py-3">Type</th>
+                        <th class="px-5 py-3">Current</th>
+                        <th class="px-5 py-3">Target</th>
+                        <th class="px-5 py-3">Gap</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for metric in breaches[:8] %}
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="px-5 py-4">
+                            <a href="/resource/{{ metric.resource_id if metric.resource_id is defined else metric['resource_id'] }}" class="font-medium text-azure-600 hover:text-azure-700">
+                                {% if metric.resource is defined %}
+                                    {{ metric.resource.name if metric.resource else metric.resource_id.split('/')[-1] }}
+                                {% else %}
+                                    {{ metric.resource_name if metric.resource_name is defined else metric['resource_name'] }}
+                                {% endif %}
+                            </a>
+                        </td>
+                        <td class="px-5 py-4 text-sm text-slate-500">
+                            {% if metric.resource is defined %}
+                                {{ metric.resource.type.split('/')[-1] if metric.resource else 'Unknown' }}
+                            {% else %}
+                                {{ metric.resource_type if metric.resource_type is defined else metric['resource_type'] }}
+                            {% endif %}
+                        </td>
+                        <td class="px-5 py-4">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                {{ (metric.availability_percent if metric.availability_percent is defined else metric['availability_percent']) | round(2) }}%
+                            </span>
+                        </td>
+                        <td class="px-5 py-4 text-sm text-slate-500">{{ (metric.sla_target if metric.sla_target is defined else metric['sla_target']) | round(2) }}%</td>
+                        <td class="px-5 py-4 text-sm font-medium text-red-600">-{{ ((metric.sla_target if metric.sla_target is defined else metric['sla_target']) - (metric.availability_percent if metric.availability_percent is defined else metric['availability_percent'])) | round(2) }}%</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% else %}
+    <!-- All Clear Card -->
+    <div class="bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl p-8 text-center text-white shadow-lg">
+        <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-white/20 flex items-center justify-center">
+            <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        </div>
+        <h3 class="text-xl font-semibold">All Systems Operational</h3>
+        <p class="mt-2 text-emerald-100">No SLA breaches detected in the selected time range</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function subscriptionFilterComponent() {
+        return {
+            refreshing: false,
+            filterOpen: false,
+            search: '',
+            selected: {{ selected_subscription_ids | tojson | safe }},
+            subscriptions: {{ subscriptions_json | tojson | safe }},
+            
+            init() {
+                if (!Array.isArray(this.selected)) this.selected = [];
+            },
+            
+            getFilteredSubscriptions() {
+                const term = this.search.toLowerCase();
+                return this.subscriptions.filter(s => 
+                    (s.name || '').toLowerCase().includes(term) || 
+                    (s.id || '').toLowerCase().includes(term)
+                );
+            },
+            
+            toggle(id) {
+                const idx = this.selected.indexOf(id);
+                idx > -1 ? this.selected.splice(idx, 1) : this.selected.push(id);
+            },
+            
+            isSelected(id) { return this.selected.includes(id); },
+            selectAll() { this.selected = this.subscriptions.map(s => s.id); },
+            clearAll() { this.selected = []; },
+            
+            getDisplayText() {
+                if (this.selected.length === 0 || this.selected.length === this.subscriptions.length) return 'All Subscriptions';
+                if (this.selected.length === 1) {
+                    const sub = this.subscriptions.find(s => s.id === this.selected[0]);
+                    return sub ? (sub.name || sub.id.substring(0, 8) + '...') : '1 selected';
+                }
+                return this.selected.length + ' selected';
+            }
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const trendData = {{ trend_data | tojson | safe }};
+        const trendCanvas = document.getElementById('trendChart');
+        
+        if (trendCanvas && trendData.length > 0) {
+            new Chart(trendCanvas.getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: trendData.map(d => d.date),
+                    datasets: [{
+                        label: 'Availability %',
+                        data: trendData.map(d => d.avg_availability),
+                        borderColor: '#0078d4',
+                        backgroundColor: 'rgba(0, 120, 212, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 3,
+                        pointBackgroundColor: '#0078d4'
+                    }, {
+                        label: 'SLA Target',
+                        data: trendData.map(() => 99.9),
+                        borderColor: '#ef4444',
+                        borderDash: [5, 5],
+                        pointRadius: 0,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { intersect: false, mode: 'index' },
+                    plugins: {
+                        legend: { 
+                            position: 'bottom',
+                            labels: { usePointStyle: true, padding: 20 }
+                        }
+                    },
+                    scales: {
+                        y: { min: 95, max: 100, grid: { color: '#f1f5f9' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

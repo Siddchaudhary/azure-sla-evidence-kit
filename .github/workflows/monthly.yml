@@ -1,0 +1,97 @@
+name: Monthly SLA Report
+
+on:
+  schedule:
+    # Run at 03:00 UTC on the 1st of every month
+    - cron: '0 3 1 * *'
+  workflow_dispatch:
+    inputs:
+      start_date:
+        description: 'Start date (YYYY-MM-DD), defaults to last month start'
+        required: false
+        type: string
+      end_date:
+        description: 'End date (YYYY-MM-DD), defaults to last month end'
+        required: false
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  generate-report:
+    name: Generate SLA Report
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Calculate date range
+        id: dates
+        run: |
+          if [ -n "${{ inputs.start_date }}" ] && [ -n "${{ inputs.end_date }}" ]; then
+            echo "start=${{ inputs.start_date }}" >> $GITHUB_OUTPUT
+            echo "end=${{ inputs.end_date }}" >> $GITHUB_OUTPUT
+          else
+            # Calculate last full month
+            LAST_MONTH_START=$(date -d "$(date +%Y-%m-01) -1 month" +%Y-%m-%d)
+            LAST_MONTH_END=$(date -d "$(date +%Y-%m-01) -1 day" +%Y-%m-%d)
+            echo "start=$LAST_MONTH_START" >> $GITHUB_OUTPUT
+            echo "end=$LAST_MONTH_END" >> $GITHUB_OUTPUT
+          fi
+          echo "Report period: ${{ steps.dates.outputs.start }} to ${{ steps.dates.outputs.end }}"
+
+      - name: Run SLA Report Generator
+        run: |
+          uv run python -m azsla run \
+            --subscriptions "${{ secrets.AZURE_SUBSCRIPTION_ID }}" \
+            --start "${{ steps.dates.outputs.start }}" \
+            --end "${{ steps.dates.outputs.end }}" \
+            --out ./outputs \
+            --verbose
+        env:
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+
+      - name: Upload report artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sla-report-${{ steps.dates.outputs.start }}-to-${{ steps.dates.outputs.end }}
+          path: outputs/
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Report Summary
+        if: always()
+        run: |
+          echo "## SLA Report Generated" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Report Period:** ${{ steps.dates.outputs.start }} to ${{ steps.dates.outputs.end }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f outputs/executive_summary.md ]; then
+            echo "### Executive Summary" >> $GITHUB_STEP_SUMMARY
+            cat outputs/executive_summary.md >> $GITHUB_STEP_SUMMARY
+          fi

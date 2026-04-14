@@ -1,0 +1,287 @@
+# Azure SLA Catalog
+# Maps resource types to SLA targets based on Microsoft published SLAs
+# Reference: https://azure.microsoft.com/en-us/support/legal/sla/summary/
+
+# Default SLA when resource type is not found in catalog
+default_sla: 99.9
+
+resource_types:
+  # =============================================================================
+  # COMPUTE
+  # =============================================================================
+  
+  # Virtual Machines
+  # https://azure.microsoft.com/en-us/support/legal/sla/virtual-machines/
+  Microsoft.Compute/virtualMachines:
+    default_sla: 99.9
+    conditions:
+      - description: "Single instance VM with Premium SSD"
+        sku_contains: "Standard"
+        premium_storage: true
+        sla: 99.9
+      - description: "Two or more VMs in Availability Set"
+        availability_set: true
+        sla: 99.95
+      - description: "Two or more VMs across Availability Zones"
+        availability_zones: true
+        sla: 99.99
+
+  # Azure Kubernetes Service (AKS)
+  # https://azure.microsoft.com/en-us/support/legal/sla/kubernetes-service/
+  Microsoft.ContainerService/managedClusters:
+    default_sla: 99.5
+    conditions:
+      - description: "Free tier"
+        tier: "Free"
+        sla: -1
+      - description: "Standard tier with Uptime SLA"
+        tier: "Standard"
+        sla: 99.95
+      - description: "With Availability Zones"
+        availability_zones: true
+        sla: 99.99
+
+  # Container Apps
+  # https://azure.microsoft.com/en-us/support/legal/sla/container-apps/
+  Microsoft.App/containerApps:
+    default_sla: 99.95
+
+  # =============================================================================
+  # WEB & APP SERVICES
+  # =============================================================================
+  
+  # App Service / Web Apps
+  # https://azure.microsoft.com/en-us/support/legal/sla/app-service/
+  Microsoft.Web/sites:
+    default_sla: 99.95
+    conditions:
+      - description: "Standard, Premium, or Isolated tier"
+        tier_contains: "Standard"
+        sla: 99.95
+      - description: "Premium tier"
+        tier_contains: "Premium"
+        sla: 99.95
+      - description: "Isolated tier"
+        tier_contains: "Isolated"
+        sla: 99.95
+      - description: "Free or Shared tier (no SLA)"
+        tier_contains: "Free"
+        sla: -1
+      - description: "Basic tier"
+        tier_contains: "Basic"
+        sla: 99.95
+
+  # Azure Functions (Consumption plan has different SLA)
+  # https://azure.microsoft.com/en-us/support/legal/sla/functions/
+  Microsoft.Web/sites/functions:
+    default_sla: 99.95
+
+  # =============================================================================
+  # DATABASES
+  # =============================================================================
+  
+  # Azure SQL Database
+  # https://azure.microsoft.com/en-us/support/legal/sla/azure-sql-database/
+  Microsoft.Sql/servers/databases:
+    default_sla: 99.99
+    conditions:
+      - description: "Business Critical or Premium with Zone Redundancy"
+        tier_contains: "BusinessCritical"
+        zone_redundant: true
+        sla: 99.995
+      - description: "Business Critical or Premium"
+        tier_contains: "BusinessCritical"
+        sla: 99.99
+      - description: "Premium tier"
+        tier_contains: "Premium"
+        sla: 99.99
+      - description: "General Purpose or Standard"
+        tier_contains: "GeneralPurpose"
+        sla: 99.99
+      - description: "Standard tier"
+        tier_contains: "Standard"
+        sla: 99.99
+      - description: "Basic tier"
+        tier_contains: "Basic"
+        sla: 99.99
+      - description: "Hyperscale"
+        tier_contains: "Hyperscale"
+        sla: 99.99
+
+  # PostgreSQL Flexible Server
+  # https://azure.microsoft.com/en-us/support/legal/sla/postgresql/
+  Microsoft.DBforPostgreSQL/flexibleServers:
+    default_sla: 99.99
+    conditions:
+      - description: "Zone redundant HA"
+        zone_redundant: true
+        sla: 99.99
+      - description: "Same zone HA"
+        ha_mode: "SameZone"
+        sla: 99.95
+      - description: "No HA"
+        sla: 99.9
+
+  # Azure Cosmos DB
+  # https://azure.microsoft.com/en-us/support/legal/sla/cosmos-db/
+  Microsoft.DocumentDB/databaseAccounts:
+    default_sla: 99.99
+    conditions:
+      - description: "Multi-region with strong consistency"
+        multi_region: true
+        sla: 99.999
+
+  # Azure Cache for Redis
+  # https://azure.microsoft.com/en-us/support/legal/sla/cache/
+  Microsoft.Cache/Redis:
+    default_sla: 99.9
+    conditions:
+      - description: "Premium tier with zone redundancy"
+        tier: "Premium"
+        zone_redundant: true
+        sla: 99.99
+      - description: "Premium tier"
+        tier: "Premium"
+        sla: 99.9
+      - description: "Standard tier"
+        tier: "Standard"
+        sla: 99.9
+
+  # =============================================================================
+  # STORAGE
+  # =============================================================================
+  
+  # Azure Storage Accounts
+  # https://azure.microsoft.com/en-us/support/legal/sla/storage/
+  Microsoft.Storage/storageAccounts:
+    default_sla: 99.9
+    conditions:
+      - description: "RA-GRS/RA-GZRS Read Access"
+        replication: "RA-GRS"
+        sla: 99.99
+      - description: "GRS/GZRS"
+        replication: "GRS"
+        sla: 99.9
+      - description: "ZRS"
+        replication: "ZRS"
+        sla: 99.9
+      - description: "LRS"
+        replication: "LRS"
+        sla: 99.9
+
+  # =============================================================================
+  # NETWORKING
+  # =============================================================================
+  
+  # Azure Load Balancer (Standard)
+  # https://azure.microsoft.com/en-us/support/legal/sla/load-balancer/
+  Microsoft.Network/loadBalancers:
+    default_sla: 99.99
+    conditions:
+      - description: "Standard SKU"
+        sku: "Standard"
+        sla: 99.99
+
+  # Application Gateway
+  # https://azure.microsoft.com/en-us/support/legal/sla/application-gateway/
+  Microsoft.Network/applicationGateways:
+    default_sla: 99.95
+    conditions:
+      - description: "Standard_v2 or WAF_v2"
+        sku_contains: "v2"
+        sla: 99.95
+
+  # Virtual Network Gateway (VPN/ExpressRoute)
+  # https://azure.microsoft.com/en-us/support/legal/sla/vpn-gateway/
+  Microsoft.Network/virtualNetworkGateways:
+    default_sla: 99.95
+    conditions:
+      - description: "VpnGw1AZ, VpnGw2AZ, etc. (AZ SKUs)"
+        sku_contains: "AZ"
+        sla: 99.99
+      - description: "Standard VPN Gateway"
+        sla: 99.95
+
+  # Azure Firewall
+  # https://azure.microsoft.com/en-us/support/legal/sla/azure-firewall/
+  Microsoft.Network/azureFirewalls:
+    default_sla: 99.95
+    conditions:
+      - description: "Availability Zone deployment"
+        availability_zones: true
+        sla: 99.99
+      - description: "Single zone deployment"
+        sla: 99.95
+
+  # Azure Bastion
+  # https://azure.microsoft.com/en-us/support/legal/sla/azure-bastion/
+  Microsoft.Network/bastionHosts:
+    default_sla: 99.95
+
+  # Azure Front Door / CDN
+  # https://azure.microsoft.com/en-us/support/legal/sla/frontdoor/
+  Microsoft.Cdn/profiles:
+    default_sla: 99.99
+
+  # ExpressRoute
+  # https://azure.microsoft.com/en-us/support/legal/sla/expressroute/
+  Microsoft.Network/expressRouteCircuits:
+    default_sla: 99.95
+
+  # Public IP Address (Standard)
+  # https://azure.microsoft.com/en-us/support/legal/sla/virtual-network/
+  Microsoft.Network/publicIPAddresses:
+    default_sla: 99.99
+    conditions:
+      - description: "Standard SKU"
+        sku: "Standard"
+        sla: 99.99
+
+  # =============================================================================
+  # MESSAGING & EVENTS
+  # =============================================================================
+  
+  # Azure Service Bus
+  # https://azure.microsoft.com/en-us/support/legal/sla/service-bus/
+  Microsoft.ServiceBus/namespaces:
+    default_sla: 99.9
+    conditions:
+      - description: "Premium tier"
+        tier: "Premium"
+        sla: 99.95
+      - description: "Standard tier"
+        tier: "Standard"
+        sla: 99.9
+
+  # Azure Event Hubs
+  # https://azure.microsoft.com/en-us/support/legal/sla/event-hubs/
+  Microsoft.EventHub/namespaces:
+    default_sla: 99.95
+    conditions:
+      - description: "Dedicated tier"
+        tier: "Dedicated"
+        sla: 99.99
+      - description: "Premium tier"
+        tier: "Premium"
+        sla: 99.95
+      - description: "Standard tier"
+        tier: "Standard"
+        sla: 99.95
+
+  # =============================================================================
+  # SECURITY & IDENTITY
+  # =============================================================================
+  
+  # Azure Key Vault
+  # https://azure.microsoft.com/en-us/support/legal/sla/key-vault/
+  Microsoft.KeyVault/vaults:
+    default_sla: 99.99
+
+  # =============================================================================
+  # AI & COGNITIVE SERVICES
+  # =============================================================================
+  
+  # Azure Cognitive Services / Azure AI
+  # https://azure.microsoft.com/en-us/support/legal/sla/cognitive-services/
+  Microsoft.CognitiveServices/accounts:
+    default_sla: 99.9

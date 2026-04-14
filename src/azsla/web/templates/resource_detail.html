@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+
+{% block title %}{{ resource.name }} - Azure SLA{% endblock %}
+
+{% block content %}
+<div>
+    <!-- Breadcrumb -->
+    <nav class="mb-4">
+        <ol class="flex items-center space-x-2 text-sm text-gray-500">
+            <li><a href="/resources" class="hover:text-azure-600">Resources</a></li>
+            <li>/</li>
+            <li class="text-gray-900">{{ resource.name }}</li>
+        </ol>
+    </nav>
+    
+    <!-- Resource Header -->
+    <div class="bg-white rounded-lg shadow p-6 mb-6">
+        <div class="flex items-start justify-between">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">{{ resource.name }}</h1>
+                <p class="text-gray-600 mt-1">{{ resource.type }}</p>
+                <p class="text-sm text-gray-400 mt-2 font-mono">{{ resource.id }}</p>
+            </div>
+            
+            {% if metrics %}
+            {% set latest = metrics[0] %}
+            <div class="text-right">
+                {% if latest.compliance_status == 'COMPLIANT' %}
+                <span class="px-4 py-2 text-lg font-medium rounded-full bg-green-100 text-green-800">
+                    ✓ Compliant
+                </span>
+                {% elif latest.compliance_status == 'BREACH' %}
+                <span class="px-4 py-2 text-lg font-medium rounded-full bg-red-100 text-red-800">
+                    ✗ SLA Breach
+                </span>
+                {% else %}
+                <span class="px-4 py-2 text-lg font-medium rounded-full bg-yellow-100 text-yellow-800">
+                    ? Unknown
+                </span>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Resource Details -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t">
+            <div>
+                <p class="text-sm text-gray-500">Subscription</p>
+                <p class="font-medium">{{ resource.subscription_id[:8] }}...</p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-500">Resource Group</p>
+                <p class="font-medium">{{ resource.resource_group }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-500">Location</p>
+                <p class="font-medium">{{ resource.location }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-500">SKU / Tier</p>
+                <p class="font-medium">{{ resource.sku or '--' }} / {{ resource.tier or '--' }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Latest Metrics -->
+    {% if metrics %}
+    {% set latest = metrics[0] %}
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-sm text-gray-500">Current Availability</h3>
+            <p class="text-3xl font-bold {% if latest.availability_percent >= 99.9 %}text-green-600{% elif latest.availability_percent >= 99 %}text-yellow-600{% else %}text-red-600{% endif %}">
+                {% if latest.availability_percent >= 0 %}
+                {{ latest.availability_percent | round(2) }}%
+                {% else %}
+                --
+                {% endif %}
+            </p>
+        </div>
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-sm text-gray-500">SLA Target</h3>
+            <p class="text-3xl font-bold text-gray-900">
+                {% if latest.sla_target %}{{ latest.sla_target | round(2) }}%{% else %}--{% endif %}
+            </p>
+        </div>
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-sm text-gray-500">Gap</h3>
+            <p class="text-3xl font-bold {% if latest.gap and latest.gap >= 0 %}text-green-600{% else %}text-red-600{% endif %}">
+                {% if latest.gap %}
+                {% if latest.gap > 0 %}+{% endif %}{{ latest.gap | round(4) }}%
+                {% else %}
+                --
+                {% endif %}
+            </p>
+        </div>
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-sm text-gray-500">Downtime</h3>
+            <p class="text-3xl font-bold text-gray-900">
+                {{ latest.down_minutes | round(1) }} min
+            </p>
+            <p class="text-xs text-gray-500">of {{ latest.total_minutes | round(0) }} min total</p>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Metrics History Chart -->
+    <div class="bg-white rounded-lg shadow p-6 mb-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Availability History</h3>
+        <canvas id="historyChart" height="100"></canvas>
+    </div>
+    
+    <!-- Metrics History Table -->
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-900">Collection History</h3>
+        </div>
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Period</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Availability</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Downtime</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Source</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Collected</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for metric in metrics[:20] %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                        {{ metric.start_time.strftime('%Y-%m-%d %H:%M') }} - {{ metric.end_time.strftime('%H:%M') }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="{% if metric.availability_percent >= 99.9 %}text-green-600{% elif metric.availability_percent >= 99 %}text-yellow-600{% else %}text-red-600{% endif %} font-medium">
+                            {% if metric.availability_percent >= 0 %}
+                            {{ metric.availability_percent | round(2) }}%
+                            {% else %}
+                            --
+                            {% endif %}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {{ metric.down_minutes | round(1) }} min
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {% if metric.compliance_status == 'COMPLIANT' %}
+                        <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">Compliant</span>
+                        {% elif metric.compliance_status == 'BREACH' %}
+                        <span class="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">Breach</span>
+                        {% else %}
+                        <span class="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">Unknown</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {{ metric.metric_source }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {{ metric.collected_at.strftime('%Y-%m-%d %H:%M') }}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="px-6 py-12 text-center text-gray-500">
+                        No metrics collected yet for this resource.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const metrics = {{ metrics | map(attribute='__dict__') | list | tojson | safe if metrics else '[]' }};
+    
+    if (metrics.length > 0) {
+        const ctx = document.getElementById('historyChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: metrics.map(m => {
+                    const d = new Date(m.start_time);
+                    return d.toLocaleDateString();
+                }).reverse(),
+                datasets: [{
+                    label: 'Availability %',
+                    data: metrics.map(m => m.availability_percent).reverse(),
+                    borderColor: '#0078d4',
+                    backgroundColor: 'rgba(0, 120, 212, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                }, {
+                    label: 'SLA Target',
+                    data: metrics.map(m => m.sla_target || 99.9).reverse(),
+                    borderColor: '#dc2626',
+                    borderDash: [5, 5],
+                    pointRadius: 0,
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'bottom' }
+                },
+                scales: {
+                    y: {
+                        min: Math.min(95, Math.min(...metrics.map(m => m.availability_percent || 100)) - 1),
+                        max: 100,
+                    }
+                }
+            }
+        });
+    }
+</script>
+{% endblock %}
