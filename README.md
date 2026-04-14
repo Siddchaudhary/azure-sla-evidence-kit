@@ -4,6 +4,12 @@ A Python web dashboard and CLI that discovers Azure resources, collects availabi
 
 > ⚠️ **Disclaimer**: This tool provides informational availability estimates based on Azure Monitor metrics. It is **not** an official SLA attestation tool and should not be used for contractual SLA claims. Always refer to the Azure Portal SLA credit process for official SLA breach claims.
 
+## Screenshot
+
+![SLA Compliance Dashboard](docs/images/dashboard.png)
+
+*Azure Portal-style dashboard showing SLA compliance overview, trend charts, and resource distribution*
+
 ## Features
 
 - 🌐 **Azure Portal-Style Dashboard**: Modern UI matching Azure Portal design language
