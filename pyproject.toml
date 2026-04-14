@@ -1,6 +1,6 @@
 [project]
 name = "azure-sla-report-generator"
-version = "0.1.0"
+version = "0.9.0"
 description = "CLI tool to discover Azure resources and generate SLA compliance reports"
 readme = "README.md"
 license = { text = "MIT" }
