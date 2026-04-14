@@ -1,6 +1,6 @@
 """Database repository for CRUD operations."""
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional, Sequence, List
 
 from sqlalchemy import select, and_, func, delete, Integer
