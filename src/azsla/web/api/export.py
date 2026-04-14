@@ -59,9 +59,10 @@ async def export_csv(
     # Write data rows
     for r in resources:
         metric = metrics_by_resource.get(r.id)
+        type_short = r.type.split("/")[-1] if r.type else ""
         writer.writerow([
             r.name,
-            r.type_short,
+            type_short,
             sub_names.get(r.subscription_id, r.subscription_id[:8]),
             r.resource_group,
             r.location,
