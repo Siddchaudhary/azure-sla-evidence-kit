@@ -30,6 +30,10 @@ A Python web dashboard and CLI that discovers Azure resources, collects availabi
 - ⌨️ **Keyboard Shortcuts**: Quick navigation (`?` for help, `R` refresh, `E` export, `/` search, `G+D/R/S` navigate)
 - 📅 **Date Range Presets**: One-click filters for 7d, 30d, 90d, and current month
 - 🔎 **Resource Quick View**: Modal preview of resource details without page navigation
+- 🕐 **Data Refresh Indicator**: Shows relative time since last collection with auto-refresh toggle
+- ⭐ **Favorites**: Star/pin resources for quick access with localStorage persistence
+- 📄 **PDF Export**: Print-friendly compliance reports with breach highlights
+- 🏷️ **Tag Filters**: Filter resources by Azure tags
 
 ## Supported Resource Types
 

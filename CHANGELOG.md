@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-04-15
+
+### Added
+- **Data Refresh Indicator**: Shows relative time since last data collection ("5 mins ago")
+  - Auto-refresh toggle with 5-minute countdown timer
+  - Visual indicator in dashboard header
+- **Favorites/Pinned Resources**: Star resources for quick access
+  - Click star icon to favorite resources on Resources page
+  - "Favorites" filter button to show only starred items
+  - Persists in localStorage across sessions
+- **PDF Export**: Generate print-friendly compliance reports
+  - "Export PDF" button in dashboard command bar
+  - Professional report layout with summary stats
+  - SLA breaches highlighted section
+  - Browser print dialog for saving as PDF
+- **Resource Tag Filters**: Filter resources by Azure tags
+  - Backend support for tag-based filtering
+  - Query parameter `?tag=key:value` on Resources page
+
 ## [0.4.0] - 2026-04-14
 
 ### Added
