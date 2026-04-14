@@ -2,6 +2,8 @@
 
 A Python web dashboard and CLI that discovers Azure resources, collects availability metrics, and generates SLA compliance reports. Features an Azure Portal-inspired UI with real-time monitoring.
 
+**Live Demo:** [https://azsla.cloudsalive.com](https://azsla.cloudsalive.com)
+
 > ⚠️ **Disclaimer**: This tool provides informational availability estimates based on Azure Monitor metrics. It is **not** an official SLA attestation tool and should not be used for contractual SLA claims. Always refer to the Azure Portal SLA credit process for official SLA breach claims.
 
 ## Screenshot
