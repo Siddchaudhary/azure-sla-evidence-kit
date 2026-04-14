@@ -1,14 +1,24 @@
 """Rate limiting middleware for API protection."""
 
 import logging
-from typing import Callable
+import os
+from typing import Callable, Optional
 
-from fastapi import FastAPI, Request, Response
-from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.errors import RateLimitExceeded
-from slowapi.util import get_remote_address
+from fastapi import FastAPI, Request
 
 logger = logging.getLogger(__name__)
+
+# Rate limiting is optional - only enabled if slowapi is installed
+RATE_LIMITING_ENABLED = os.getenv("RATE_LIMITING_ENABLED", "true").lower() == "true"
+
+try:
+    from slowapi import Limiter, _rate_limit_exceeded_handler
+    from slowapi.errors import RateLimitExceeded
+    from slowapi.util import get_remote_address
+    SLOWAPI_AVAILABLE = True
+except ImportError:
+    SLOWAPI_AVAILABLE = False
+    logger.warning("slowapi not installed - rate limiting disabled")
 
 
 def get_client_ip(request: Request) -> str:
@@ -24,47 +34,58 @@ def get_client_ip(request: Request) -> str:
         return real_ip.strip()
     
     # Fall back to direct connection IP
-    return get_remote_address(request)
+    if SLOWAPI_AVAILABLE:
+        return get_remote_address(request)
+    return request.client.host if request.client else "unknown"
 
 
-# Create limiter instance with custom key function
-limiter = Limiter(
-    key_func=get_client_ip,
-    default_limits=["200/minute", "1000/hour"],
-    storage_uri="memory://",  # Use in-memory storage (consider Redis for production)
-    strategy="fixed-window",
-)
+# Create limiter instance if slowapi is available
+if SLOWAPI_AVAILABLE and RATE_LIMITING_ENABLED:
+    limiter = Limiter(
+        key_func=get_client_ip,
+        default_limits=["200/minute", "1000/hour"],
+        storage_uri="memory://",
+        strategy="fixed-window",
+    )
+else:
+    limiter = None
 
 
 def setup_rate_limiting(app: FastAPI) -> None:
-    """Configure rate limiting for the FastAPI application.
+    """Configure rate limiting for the FastAPI application."""
+    if not SLOWAPI_AVAILABLE:
+        logger.info("Rate limiting not available (slowapi not installed)")
+        return
     
-    Rate limits:
-    - Default: 200 requests per minute, 1000 per hour
-    - Collection trigger: 2 per minute (expensive operation)
-    - Export CSV: 10 per minute (resource intensive)
-    - Health checks: No limit (needed for orchestration)
-    """
-    app.state.limiter = limiter
-    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+    if not RATE_LIMITING_ENABLED:
+        logger.info("Rate limiting disabled by configuration")
+        return
     
-    logger.info("Rate limiting enabled: 200/min, 1000/hour default")
+    if limiter:
+        app.state.limiter = limiter
+        app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+        logger.info("Rate limiting enabled: 200/min, 1000/hour default")
 
 
-# Decorator for specific rate limits
 def rate_limit(limit: str) -> Callable:
-    """Decorator to apply custom rate limit to an endpoint.
-    
-    Usage:
-        @router.post("/expensive-operation")
-        @rate_limit("5/minute")
-        async def expensive_operation():
-            ...
-    """
-    return limiter.limit(limit)
+    """Decorator to apply custom rate limit to an endpoint."""
+    if limiter:
+        return limiter.limit(limit)
+    # Return a no-op decorator if rate limiting is disabled
+    def noop_decorator(func):
+        return func
+    return noop_decorator
 
 
 # Pre-configured decorators for common limits
-rate_limit_collection = limiter.limit("2/minute")  # Trigger collection
-rate_limit_export = limiter.limit("10/minute")  # CSV export
-rate_limit_write = limiter.limit("30/minute")  # Write operations
+def _get_limit_decorator(limit: str) -> Callable:
+    """Get a rate limit decorator or no-op if disabled."""
+    if limiter:
+        return limiter.limit(limit)
+    def noop_decorator(func):
+        return func
+    return noop_decorator
+
+rate_limit_collection = _get_limit_decorator("2/minute")
+rate_limit_export = _get_limit_decorator("10/minute")
+rate_limit_write = _get_limit_decorator("30/minute")
