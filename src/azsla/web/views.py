@@ -259,3 +259,45 @@ async def settings_view(
             "recent_runs": recent_runs,
         },
     )
+
+
+@router.get("/api/resource/{resource_id:path}")
+async def get_resource_api(
+    resource_id: str,
+    db: AsyncSession = Depends(get_db),
+):
+    """API endpoint for resource details (used by modal)."""
+    resource_repo = ResourceRepository(db)
+    metrics_repo = MetricsRepository(db)
+
+    # Get resource
+    resources = await resource_repo.get_all_active()
+    resource = next((r for r in resources if r.id == resource_id), None)
+
+    if not resource:
+        return {"error": "Resource not found"}
+
+    # Get metrics history
+    metrics = await metrics_repo.get_for_resource(resource_id)
+
+    return {
+        "resource": {
+            "id": resource.id,
+            "name": resource.name,
+            "type": resource.type,
+            "location": resource.location,
+            "resource_group": resource.resource_group,
+            "subscription_id": resource.subscription_id,
+        },
+        "metrics": [
+            {
+                "id": m.id,
+                "period_start": m.period_start.isoformat() if m.period_start else None,
+                "period_end": m.period_end.isoformat() if m.period_end else None,
+                "availability_percent": m.availability_percent,
+                "sla_target": m.sla_target,
+                "compliance_status": m.compliance_status,
+            }
+            for m in metrics
+        ],
+    }

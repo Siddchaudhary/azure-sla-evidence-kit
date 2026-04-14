@@ -257,12 +257,36 @@
                         </div>
                     </div>
                     
+                    <!-- Date range presets -->
+                    <div class="flex items-center gap-1" x-data="datePresets()">
+                        <button type="button" @click="setPreset(7)" 
+                                class="px-2 py-1 text-[11px] rounded border border-portal-border hover:bg-portal-bg transition-colors"
+                                :class="activePreset === 7 ? 'bg-azure-50 border-azure-500 text-azure-600' : 'bg-white'">
+                            7d
+                        </button>
+                        <button type="button" @click="setPreset(30)"
+                                class="px-2 py-1 text-[11px] rounded border border-portal-border hover:bg-portal-bg transition-colors"
+                                :class="activePreset === 30 ? 'bg-azure-50 border-azure-500 text-azure-600' : 'bg-white'">
+                            30d
+                        </button>
+                        <button type="button" @click="setPreset(90)"
+                                class="px-2 py-1 text-[11px] rounded border border-portal-border hover:bg-portal-bg transition-colors"
+                                :class="activePreset === 90 ? 'bg-azure-50 border-azure-500 text-azure-600' : 'bg-white'">
+                            90d
+                        </button>
+                        <button type="button" @click="setThisMonth()"
+                                class="px-2 py-1 text-[11px] rounded border border-portal-border hover:bg-portal-bg transition-colors"
+                                :class="activePreset === 'month' ? 'bg-azure-50 border-azure-500 text-azure-600' : 'bg-white'">
+                            This month
+                        </button>
+                    </div>
+                    
                     <!-- Date range chip -->
                     <div class="filter-chip">
                         <span>Period</span>
-                        <input type="date" name="start_date" value="{{ start_date }}" class="border-0 p-0 text-[13px] bg-transparent w-24">
+                        <input type="date" id="startDateInput" name="start_date" value="{{ start_date }}" class="border-0 p-0 text-[13px] bg-transparent w-24">
                         <span>-</span>
-                        <input type="date" name="end_date" value="{{ end_date }}" class="border-0 p-0 text-[13px] bg-transparent w-24">
+                        <input type="date" id="endDateInput" name="end_date" value="{{ end_date }}" class="border-0 p-0 text-[13px] bg-transparent w-24">
                     </div>
                     
                     <!-- Add filter button -->
@@ -541,6 +565,52 @@
                     return sub ? (sub.name || sub.id.substring(0, 8) + '...') : '1 selected';
                 }
                 return this.selected.length + ' selected';
+            }
+        }
+    }
+    
+    function datePresets() {
+        return {
+            activePreset: null,
+            
+            init() {
+                // Check if current dates match a preset
+                const start = document.getElementById('startDateInput')?.value;
+                const end = document.getElementById('endDateInput')?.value;
+                if (start && end) {
+                    const startDate = new Date(start);
+                    const endDate = new Date(end);
+                    const diffDays = Math.round((endDate - startDate) / (1000 * 60 * 60 * 24));
+                    if ([7, 30, 90].includes(diffDays)) {
+                        this.activePreset = diffDays;
+                    }
+                }
+            },
+            
+            setPreset(days) {
+                const end = new Date();
+                const start = new Date();
+                start.setDate(end.getDate() - days);
+                
+                this.updateDates(start, end);
+                this.activePreset = days;
+            },
+            
+            setThisMonth() {
+                const now = new Date();
+                const start = new Date(now.getFullYear(), now.getMonth(), 1);
+                const end = now;
+                
+                this.updateDates(start, end);
+                this.activePreset = 'month';
+            },
+            
+            updateDates(start, end) {
+                const fmt = (d) => d.toISOString().split('T')[0];
+                const startInput = document.getElementById('startDateInput');
+                const endInput = document.getElementById('endDateInput');
+                if (startInput) startInput.value = fmt(start);
+                if (endInput) endInput.value = fmt(end);
             }
         }
     }
