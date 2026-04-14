@@ -126,9 +126,10 @@ def create_app() -> FastAPI:
     async def readiness_check():
         """Readiness check - verifies database connectivity."""
         try:
+            from sqlalchemy import text
             from azsla.db.database import AsyncSessionLocal
             async with AsyncSessionLocal() as session:
-                await session.execute("SELECT 1")
+                await session.execute(text("SELECT 1"))
             return JSONResponse({"status": "ready", "database": "connected"})
         except Exception as e:
             return JSONResponse(
