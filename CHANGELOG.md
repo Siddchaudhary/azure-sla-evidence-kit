@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-04-14
+
+### Added
+- **Keyboard Shortcuts**: Quick navigation and actions
+  - `?` - Show keyboard shortcuts help modal
+  - `R` - Refresh/trigger data collection
+  - `E` - Export CSV download
+  - `/` - Focus search input
+  - `G D` - Go to Dashboard
+  - `G R` - Go to Resources
+  - `G S` - Go to Settings
+  - `Esc` - Close modals
+- **Date Range Presets**: Quick date selection buttons on dashboard
+  - 7 days, 30 days, 90 days presets
+  - "This month" for current calendar month
+  - One-click filter application
+- **Resource Detail Modal**: Quick view resource details without navigation
+  - View resource info, latest metrics, and compliance status
+  - Recent history table (last 5 data points)
+  - Link to full resource detail page
+- **API Endpoint**: `/api/resource/{id}` for modal data fetching
+
+### Changed
+- Resources table now includes "Actions" column with quick view button
+- Footer now shows keyboard shortcuts hint
+
 ## [0.2.0] - 2026-04-14
 
 ### Added

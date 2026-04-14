@@ -19,6 +19,9 @@ A Python web dashboard and CLI that discovers Azure resources, collects availabi
 - 🚦 **API Rate Limiting**: Optional rate limiting to protect against abuse
 - 🧪 **Comprehensive Tests**: Unit tests with pytest-asyncio for API and repository layers
 - ☁️ **Azure Container Apps Ready**: Deploy with managed identity authentication
+- ⌨️ **Keyboard Shortcuts**: Quick navigation (`?` for help, `R` refresh, `E` export, `/` search, `G+D/R/S` navigate)
+- 📅 **Date Range Presets**: One-click filters for 7d, 30d, 90d, and current month
+- 🔎 **Resource Quick View**: Modal preview of resource details without page navigation
 
 ## Supported Resource Types
 
@@ -119,8 +122,11 @@ Then open http://localhost:8000 in your browser.
 **Dashboard Features:**
 - Real-time compliance overview with charts
 - Filter by subscription, date range, resource type
+- Date range presets (7d, 30d, 90d, This month)
 - View SLA breaches at a glance
 - Drill down into individual resource metrics
+- Quick view modal for resource details
+- Keyboard shortcuts for power users (press `?` for help)
 - Trigger manual data collection
 - Manage monitored subscriptions
 
