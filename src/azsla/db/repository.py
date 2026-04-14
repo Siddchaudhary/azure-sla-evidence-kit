@@ -258,11 +258,22 @@ class MetricsRepository:
         subscription_ids: Optional[List[str]] = None,
         subscription_id: Optional[str] = None,  # Backward compatibility
     ) -> dict:
-        """Get compliance summary statistics."""
+        """Get compliance summary statistics from latest metrics per resource."""
         # Handle backward compatibility
         if subscription_id and not subscription_ids:
             subscription_ids = [subscription_id]
         
+        # Subquery to get max collection_run_id per resource (latest metrics only)
+        subquery = (
+            select(
+                AvailabilityMetric.resource_id,
+                func.max(AvailabilityMetric.collection_run_id).label("max_run_id"),
+            )
+            .group_by(AvailabilityMetric.resource_id)
+            .subquery()
+        )
+
+        # Build query for latest metrics only
         query = select(
             func.count(AvailabilityMetric.id).label("total"),
             func.sum(
@@ -275,6 +286,12 @@ class MetricsRepository:
                 func.cast(AvailabilityMetric.compliance_status == "UNKNOWN", Integer)
             ).label("unknown"),
             func.avg(AvailabilityMetric.availability_percent).label("avg_availability"),
+        ).select_from(AvailabilityMetric).join(
+            subquery,
+            and_(
+                AvailabilityMetric.resource_id == subquery.c.resource_id,
+                AvailabilityMetric.collection_run_id == subquery.c.max_run_id,
+            ),
         )
 
         if start_time:
@@ -310,7 +327,7 @@ class MetricsRepository:
         query = select(
             func.date(AvailabilityMetric.start_time).label("date"),
             func.avg(AvailabilityMetric.availability_percent).label("avg_availability"),
-            func.count(AvailabilityMetric.id).label("resource_count"),
+            func.count(func.distinct(AvailabilityMetric.resource_id)).label("resource_count"),
         ).group_by(func.date(AvailabilityMetric.start_time)).order_by(
             func.date(AvailabilityMetric.start_time)
         )
