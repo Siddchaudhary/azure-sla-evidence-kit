@@ -96,7 +96,7 @@ Start the web dashboard for real-time SLA monitoring:
 azsla-web
 
 # Or with uvicorn directly
-uvicorn azsla.web.main:create_app --factory --reload
+uvicorn azsla.web.app:create_app --factory --reload
 ```
 
 Then open http://localhost:8000 in your browser.
@@ -282,11 +282,11 @@ The included workflows automate testing and deployment:
 |----------|-------------|---------|
 | `AZURE_CLIENT_ID` | Managed identity client ID | - |
 | `AZURE_SUBSCRIPTION_IDS` | Comma-separated subscription IDs to monitor | - |
-| `DATABASE_URL` | SQLite connection string | `sqlite+aiosqlite:///./sla_data.db` |
+| `DATABASE_URL` | SQLite connection string | `sqlite+aiosqlite:///~/.azsla/sla_data.db` |
 | `COLLECTION_ENABLED` | Enable background data collection | `true` |
 | `COLLECTION_INTERVAL_HOURS` | Hours between collection runs | `6` |
 | `AZURE_STORAGE_ACCOUNT` | Storage account for DB backup (optional) | - |
-| `AZURE_STORAGE_CONTAINER` | Blob container name for DB backup | `sla-backup` |
+| `AZURE_STORAGE_CONTAINER` | Blob container name for DB backup | `sla-data` |
 | `LOG_LEVEL` | Logging level | `INFO` |
 
 ### Manual Deployment (Docker)
@@ -346,7 +346,7 @@ docker-compose up -d
 |----------|--------|-------------|
 | `/health` | GET | Basic health check (always returns 200 if app is running) |
 | `/ready` | GET | Readiness check (verifies database connectivity) |
-| `/api/dashboard/summary` | GET | Dashboard summary statistics |
+| `/api/dashboard/stats` | GET | Dashboard statistics |
 | `/api/resources` | GET | List resources with filtering and pagination |
 | `/api/metrics` | GET | Query availability metrics |
 | `/api/subscriptions` | GET/POST/DELETE | Manage monitored subscriptions |
