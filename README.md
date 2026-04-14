@@ -1,19 +1,22 @@
-# Azure SLA Report Generator
+# Azure SLA Evidence Kit
 
-A Python CLI and **web dashboard** that discovers Azure resources, collects availability metrics, and generates SLA compliance reports in real-time.
+A Python web dashboard and CLI that discovers Azure resources, collects availability metrics, and generates SLA compliance reports. Features an Azure Portal-inspired UI with real-time monitoring.
 
 > ⚠️ **Disclaimer**: This tool provides informational availability estimates based on Azure Monitor metrics. It is **not** an official SLA attestation tool and should not be used for contractual SLA claims. Always refer to the Azure Portal SLA credit process for official SLA breach claims.
 
 ## Features
 
-- 🔍 **Discovery**: Enumerate running resources across multiple subscriptions using Azure Resource Graph
+- 🌐 **Azure Portal-Style Dashboard**: Modern UI matching Azure Portal design language
+- 🔍 **Auto-Discovery**: Enumerate resources across multiple subscriptions using Azure Resource Graph
 - 📊 **Metrics Collection**: Pull availability signals from Azure Monitor
-- 📋 **SLA Catalog**: Map resource types to published Azure SLAs (configurable YAML)
+- 📈 **SLA Trend Charts**: Track compliance trends over 30 days with historical snapshots
+- 📋 **SLA Catalog**: Map resource types to published Azure SLAs (configurable)
 - 🧮 **Compliance Calculation**: Compare actual uptime vs SLA targets
-- 📝 **Reports**: Executive summary (Markdown), detailed report (HTML), CSV exports
-- 🌐 **Web Dashboard**: Real-time SLA monitoring with date range selection
-- ⏰ **Background Collection**: Automatic periodic data collection
-- ☁️ **Azure-Ready**: Deploy to Azure Container Apps with managed identity
+- 📥 **CSV Export**: Download SLA compliance data for reporting
+- ⏰ **Background Collection**: Automatic periodic data collection (configurable interval)
+- 💾 **Persistent Storage**: SQLite with Azure Blob Storage backup for container deployments
+- 🏥 **Health Endpoints**: `/health` and `/ready` for container orchestration
+- ☁️ **Azure Container Apps Ready**: Deploy with managed identity authentication
 
 ## Supported Resource Types
 
@@ -122,13 +125,26 @@ azsla run --help
 
 ## Azure Permissions
 
-This tool requires **read-only** access. Assign the **Reader** role at the subscription or management group level:
+This tool requires **read-only** access. Assign these roles at the subscription level:
 
 ```bash
+# Required: Read resource metadata via Resource Graph
 az role assignment create \
-  --assignee <service-principal-id> \
+  --assignee <principal-id> \
   --role "Reader" \
   --scope /subscriptions/<subscription-id>
+
+# Required: Read availability metrics from Azure Monitor  
+az role assignment create \
+  --assignee <principal-id> \
+  --role "Monitoring Reader" \
+  --scope /subscriptions/<subscription-id>
+
+# Optional: For blob storage backup (if using persistent storage)
+az role assignment create \
+  --assignee <principal-id> \
+  --role "Storage Blob Data Contributor" \
+  --scope /subscriptions/<subscription-id>/resourceGroups/<rg>/providers/Microsoft.Storage/storageAccounts/<storage-account>
 ```
 
 ## SLA Catalog
@@ -165,17 +181,97 @@ The included workflows automate testing and deployment:
 
 ### Deploy to Azure Container Apps
 
-1. Create an Azure AD App Registration with federated credentials for GitHub Actions
-2. Set repository secrets:
-   - `AZURE_CLIENT_ID`
-   - `AZURE_TENANT_ID`
-   - `AZURE_SUBSCRIPTION_ID`
-   - `MONITORED_SUBSCRIPTION_IDS` (comma-separated list)
-3. Set repository variables:
-   - `AZURE_RESOURCE_GROUP`
-4. Push to `main` branch or manually trigger the workflow
+1. **Create Azure resources:**
+   ```bash
+   # Variables
+   RG="rg-sla-dashboard"
+   LOCATION="australiaeast"
+   ACR_NAME="youracr"
+   
+   # Create resource group
+   az group create -n $RG -l $LOCATION
+   
+   # Create container registry
+   az acr create -n $ACR_NAME -g $RG --sku Basic --admin-enabled true
+   
+   # Create managed identity
+   az identity create -n azsla-identity -g $RG -l $LOCATION
+   
+   # Get identity details
+   IDENTITY_ID=$(az identity show -n azsla-identity -g $RG --query id -o tsv)
+   PRINCIPAL_ID=$(az identity show -n azsla-identity -g $RG --query principalId -o tsv)
+   CLIENT_ID=$(az identity show -n azsla-identity -g $RG --query clientId -o tsv)
+   ```
 
-### Manual Deployment
+2. **Assign permissions to the managed identity:**
+   ```bash
+   SUB_ID="your-subscription-id"
+   
+   az role assignment create --assignee $PRINCIPAL_ID --role "Reader" \
+     --scope /subscriptions/$SUB_ID
+   
+   az role assignment create --assignee $PRINCIPAL_ID --role "Monitoring Reader" \
+     --scope /subscriptions/$SUB_ID
+   ```
+
+3. **Build and push the container image:**
+   ```bash
+   az acr build --registry $ACR_NAME \
+     --image azure-sla-dashboard:latest .
+   ```
+
+4. **Create Container Apps environment and deploy:**
+   ```bash
+   # Create Log Analytics workspace
+   az monitor log-analytics workspace create -g $RG -n sla-dashboard-logs -l $LOCATION
+   
+   # Create Container Apps environment
+   az containerapp env create -n azsla-env -g $RG -l $LOCATION \
+     --logs-workspace-id $(az monitor log-analytics workspace show -g $RG -n sla-dashboard-logs --query customerId -o tsv) \
+     --logs-workspace-key $(az monitor log-analytics workspace get-shared-keys -g $RG -n sla-dashboard-logs --query primarySharedKey -o tsv)
+   
+   # Get ACR password
+   ACR_PASS=$(az acr credential show -n $ACR_NAME --query passwords[0].value -o tsv)
+   
+   # Deploy container app
+   az containerapp create \
+     -n azsla-app -g $RG \
+     --environment azsla-env \
+     --image $ACR_NAME.azurecr.io/azure-sla-dashboard:latest \
+     --registry-server $ACR_NAME.azurecr.io \
+     --registry-username $ACR_NAME \
+     --registry-password $ACR_PASS \
+     --target-port 8000 \
+     --ingress external \
+     --user-assigned $IDENTITY_ID \
+     --cpu 0.5 --memory 1Gi \
+     --min-replicas 1 --max-replicas 3 \
+     --env-vars \
+       AZURE_CLIENT_ID=$CLIENT_ID \
+       AZURE_SUBSCRIPTION_IDS=$SUB_ID \
+       COLLECTION_ENABLED=true \
+       COLLECTION_INTERVAL_HOURS=6
+   ```
+
+5. **Get the app URL:**
+   ```bash
+   az containerapp show -n azsla-app -g $RG --query properties.configuration.ingress.fqdn -o tsv
+   ```
+
+### Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `AZURE_CLIENT_ID` | Managed identity client ID | - |
+| `AZURE_SUBSCRIPTION_IDS` | Comma-separated subscription IDs to monitor | - |
+| `DATABASE_URL` | SQLite connection string | `sqlite+aiosqlite:///./sla_data.db` |
+| `COLLECTION_ENABLED` | Enable background data collection | `true` |
+| `COLLECTION_INTERVAL_HOURS` | Hours between collection runs | `6` |
+| `AZURE_STORAGE_ACCOUNT` | Storage account for DB backup (optional) | - |
+| `AZURE_STORAGE_CONTAINER` | Blob container name for DB backup | `sla-backup` |
+| `LOG_LEVEL` | Logging level | `INFO` |
+
+### Manual Deployment (Docker)
 
 ```bash
 # Using the deployment script
@@ -196,16 +292,18 @@ docker-compose up -d
 │  │  Dashboard  │  │  Resources  │  │  Settings   │     │
 │  └─────────────┘  └─────────────┘  └─────────────┘     │
 └────────────────────────┬────────────────────────────────┘
-                         │ FastAPI
+                         │ FastAPI + Jinja2
 ┌────────────────────────┼────────────────────────────────┐
 │                   API Layer                              │
-│  /api/dashboard  /api/resources  /api/metrics           │
-│  /api/subscriptions  /api/collection                    │
+│  /health  /ready  /api/dashboard  /api/resources        │
+│  /api/metrics  /api/subscriptions  /api/collection      │
+│  /api/export/csv                                         │
 └────────────────────────┬────────────────────────────────┘
                          │
 ┌────────────────────────┼────────────────────────────────┐
 │              Background Scheduler                        │
-│         (APScheduler - runs every 6 hours)              │
+│      (APScheduler - configurable interval)              │
+│           + Blob Storage Backup                          │
 └────────────────────────┬────────────────────────────────┘
                          │
 ┌────────────────────────┼────────────────────────────────┐
@@ -219,10 +317,24 @@ docker-compose up -d
 └────────────────────────┬────────────────────────────────┘
                          │
 ┌────────────────────────┼────────────────────────────────┐
-│              SQLite / PostgreSQL                         │
-│   Resources │ Metrics │ Subscriptions │ CollectionRuns  │
+│              SQLite (async) + Blob Backup                │
+│   Resources │ Metrics │ Subscriptions │ SLAHistory      │
 └─────────────────────────────────────────────────────────┘
 ```
+
+## API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/health` | GET | Basic health check (always returns 200 if app is running) |
+| `/ready` | GET | Readiness check (verifies database connectivity) |
+| `/api/dashboard/summary` | GET | Dashboard summary statistics |
+| `/api/resources` | GET | List resources with filtering and pagination |
+| `/api/metrics` | GET | Query availability metrics |
+| `/api/subscriptions` | GET/POST/DELETE | Manage monitored subscriptions |
+| `/api/collection/trigger` | POST | Trigger manual data collection |
+| `/api/export/csv` | GET | Download SLA data as CSV |
+| `/api/docs` | GET | OpenAPI documentation (Swagger UI) |
 
 ## Development
 
