@@ -7,6 +7,7 @@ A Python web dashboard and CLI that discovers Azure resources, collects availabi
 ## Features
 
 - 🌐 **Azure Portal-Style Dashboard**: Modern UI matching Azure Portal design language
+- 🌙 **Dark Mode**: Toggle between light and dark themes with localStorage persistence
 - 🔍 **Auto-Discovery**: Enumerate resources across multiple subscriptions using Azure Resource Graph
 - 📊 **Metrics Collection**: Pull availability signals from Azure Monitor
 - 📈 **SLA Trend Charts**: Track compliance trends over 30 days with historical snapshots
@@ -18,6 +19,7 @@ A Python web dashboard and CLI that discovers Azure resources, collects availabi
 - 🏥 **Health Endpoints**: `/health` and `/ready` for container orchestration
 - 🚦 **API Rate Limiting**: Optional rate limiting to protect against abuse
 - 🧪 **Comprehensive Tests**: Unit tests with pytest-asyncio for API and repository layers
+- ✨ **Animated UI**: Count-up animations, donut charts, toast notifications
 - ☁️ **Azure Container Apps Ready**: Deploy with managed identity authentication
 
 ## Supported Resource Types
