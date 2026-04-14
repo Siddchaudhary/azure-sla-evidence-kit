@@ -20,12 +20,30 @@ A Python web dashboard and CLI that discovers Azure resources, collects availabi
 
 ## Supported Resource Types
 
-| Resource Type | Metrics Strategy | Status |
-|--------------|------------------|--------|
-| Virtual Machines | VmAvailabilityMetric | ✅ Implemented |
-| App Services | Requests/Http5xx | 🚧 Stub |
-| AKS Clusters | - | 🚧 Stub |
-| SQL Databases | - | 🚧 Stub |
+| Resource Type | Azure Type | Metrics Strategy | Status |
+|--------------|------------|------------------|--------|
+| Virtual Machines | `Microsoft.Compute/virtualMachines` | VmAvailabilityMetric | ✅ Implemented |
+| App Services | `Microsoft.Web/sites` | Requests/Http5xx | ✅ Implemented |
+| Function Apps | `Microsoft.Web/sites` (functionapp) | Requests/Http5xx | ✅ Implemented |
+| AKS Clusters | `Microsoft.ContainerService/managedClusters` | Node readiness | 🚧 Stub |
+| SQL Databases | `Microsoft.Sql/servers/databases` | Availability % | ✅ Implemented |
+| Storage Accounts | `Microsoft.Storage/storageAccounts` | Availability % | ✅ Implemented |
+| PostgreSQL Flexible | `Microsoft.DBforPostgreSQL/flexibleServers` | Availability % | ✅ Implemented |
+| Container Apps | `Microsoft.App/containerApps` | Replica count | ✅ Implemented |
+| Load Balancer | `Microsoft.Network/loadBalancers` | Health probe status | ✅ Implemented |
+| Application Gateway | `Microsoft.Network/applicationGateways` | Healthy host count | ✅ Implemented |
+| Key Vault | `Microsoft.KeyVault/vaults` | ServiceApiResult | ✅ Implemented |
+| Cosmos DB | `Microsoft.DocumentDB/databaseAccounts` | ServiceAvailability | ✅ Implemented |
+| Redis Cache | `Microsoft.Cache/Redis` | Server load | ✅ Implemented |
+| Service Bus | `Microsoft.ServiceBus/namespaces` | Server errors | ✅ Implemented |
+| Event Hubs | `Microsoft.EventHub/namespaces` | Server errors | ✅ Implemented |
+| Front Door / CDN | `Microsoft.Cdn/profiles` | Generic availability | ✅ Discovery |
+| Bastion Hosts | `Microsoft.Network/bastionHosts` | Generic availability | ✅ Discovery |
+| VNet Gateway | `Microsoft.Network/virtualNetworkGateways` | Generic availability | ✅ Discovery |
+| Azure Firewall | `Microsoft.Network/azureFirewalls` | Generic availability | ✅ Discovery |
+| Cognitive Services | `Microsoft.CognitiveServices/accounts` | Generic availability | ✅ Discovery |
+| ExpressRoute | `Microsoft.Network/expressRouteCircuits` | Generic availability | ✅ Discovery |
+| Public IPs | `Microsoft.Network/publicIPAddresses` | Generic availability | ✅ Discovery |
 
 ## Prerequisites
 
