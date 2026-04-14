@@ -637,10 +637,21 @@
 
     let trendChart = null;
     const allTrendData = {{ trend_data | tojson | safe }};
+    
+    console.log('Initial trend data:', allTrendData);
 
     function createTrendChart(data) {
         const canvas = document.getElementById('trendChart');
-        if (!canvas || !data || data.length === 0) return;
+        console.log('createTrendChart called with', data ? data.length : 0, 'data points');
+        
+        if (!canvas) {
+            console.log('No trendChart canvas found');
+            return;
+        }
+        if (!data || data.length === 0) {
+            console.log('No data for trend chart');
+            return;
+        }
 
         if (trendChart) {
             trendChart.destroy();
@@ -650,6 +661,10 @@
             const date = new Date(d.date);
             return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
         });
+
+        // Create SLA Target data array with 99.9 for each data point
+        const slaTargetData = data.map(() => 99.9);
+        console.log('SLA Target data points:', slaTargetData.length, 'values all', slaTargetData[0]);
 
         const datasets = [
             {
@@ -666,14 +681,19 @@
             },
             {
                 label: 'SLA Target (99.9%)',
-                data: data.map(() => 99.9),
+                data: slaTargetData,
                 borderColor: '#d13438',
-                borderDash: [5, 5],
+                borderDash: [8, 4],
                 pointRadius: 0,
-                borderWidth: 2,
-                fill: false
+                pointHoverRadius: 0,
+                borderWidth: 3,
+                fill: false,
+                order: 0
             }
         ];
+
+        console.log('Initial datasets count:', datasets.length);
+        console.log('SLA Target dataset:', datasets[1]);
 
         // Add min/max band if data available
         const hasMinMax = data.some(d => d.min_availability !== null && d.max_availability !== null);
@@ -684,7 +704,8 @@
                 borderColor: 'rgba(34, 197, 94, 0.5)',
                 borderWidth: 1,
                 pointRadius: 0,
-                fill: false
+                fill: false,
+                order: 2
             });
             datasets.push({
                 label: 'Min',
@@ -693,13 +714,21 @@
                 borderWidth: 1,
                 pointRadius: 0,
                 fill: '-1',
-                backgroundColor: 'rgba(239, 68, 68, 0.05)'
+                backgroundColor: 'rgba(239, 68, 68, 0.05)',
+                order: 3
             });
         }
+        
+        // Update Avg Availability order so SLA Target renders on top
+        datasets[0].order = 1;
 
-        // Calculate Y-axis min value
+        // Calculate Y-axis min value - ensure 99.9 SLA line is always visible
         const minDataVal = Math.min(...data.map(d => d.min_availability || d.avg_availability || 100));
-        const yAxisMin = Math.max(90, Math.floor(minDataVal - 1));
+        const yAxisMin = Math.min(99.5, Math.max(90, Math.floor(minDataVal - 1)));
+
+        console.log('Final datasets count:', datasets.length);
+        console.log('Dataset labels:', datasets.map(d => d.label));
+        console.log('yAxisMin:', yAxisMin, 'yAxisMax: 100.1');
 
         trendChart = new Chart(canvas.getContext('2d'), {
             type: 'line',
