@@ -70,7 +70,7 @@ async def export_csv(
             f"{metric.sla_target:.2f}" if metric and metric.sla_target else "",
             f"{(metric.availability_percent - metric.sla_target):.2f}" if metric and metric.availability_percent and metric.sla_target else "",
             metric.compliance_status if metric else "",
-            metric.time_generated.strftime("%Y-%m-%d %H:%M UTC") if metric and metric.time_generated else "",
+            metric.collected_at.strftime("%Y-%m-%d %H:%M UTC") if metric and metric.collected_at else "",
         ])
 
     # Prepare response
