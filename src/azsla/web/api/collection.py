@@ -3,13 +3,14 @@
 from datetime import datetime, timedelta
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Request
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from azsla.db.database import get_db
 from azsla.db.repository import CollectionRunRepository, SubscriptionRepository
 from azsla.web.scheduler import trigger_collection
+from azsla.web.rate_limit import rate_limit_collection
 
 router = APIRouter()
 
@@ -66,8 +67,10 @@ async def get_collection_status(
 
 
 @router.post("/trigger", response_model=dict)
+@rate_limit_collection
 async def trigger_collection_run(
-    request: TriggerCollectionRequest,
+    request: Request,
+    body: TriggerCollectionRequest,
     background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
 ) -> dict:
@@ -83,7 +86,7 @@ async def trigger_collection_run(
         )
 
     # Get subscription IDs
-    subscription_ids = request.subscription_ids
+    subscription_ids = body.subscription_ids
     if not subscription_ids:
         sub_repo = SubscriptionRepository(db)
         subs = await sub_repo.get_all_active()
@@ -96,12 +99,12 @@ async def trigger_collection_run(
         )
 
     # Parse dates
-    if request.start_date and request.end_date:
-        start_time = datetime.fromisoformat(request.start_date)
-        end_time = datetime.fromisoformat(request.end_date)
+    if body.start_date and body.end_date:
+        start_time = datetime.fromisoformat(body.start_date)
+        end_time = datetime.fromisoformat(body.end_date)
     else:
         end_time = datetime.utcnow()
-        start_time = end_time - timedelta(days=request.lookback_days)
+        start_time = end_time - timedelta(days=body.lookback_days)
 
     # Trigger collection in background
     background_tasks.add_task(

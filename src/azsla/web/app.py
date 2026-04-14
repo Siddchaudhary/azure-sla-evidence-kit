@@ -103,6 +103,10 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
+    # Setup rate limiting
+    from azsla.web.rate_limit import setup_rate_limiting
+    setup_rate_limiting(app)
+
     # Create static directory if it doesn't exist
     STATIC_DIR.mkdir(parents=True, exist_ok=True)
 
