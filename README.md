@@ -12,10 +12,12 @@ A Python web dashboard and CLI that discovers Azure resources, collects availabi
 - 📈 **SLA Trend Charts**: Track compliance trends over 30 days with historical snapshots
 - 📋 **SLA Catalog**: Map resource types to published Azure SLAs (configurable)
 - 🧮 **Compliance Calculation**: Compare actual uptime vs SLA targets
-- 📥 **CSV Export**: Download SLA compliance data for reporting
+- 📥 **Streaming CSV Export**: Memory-efficient download of SLA compliance data
 - ⏰ **Background Collection**: Automatic periodic data collection (configurable interval)
 - 💾 **Persistent Storage**: SQLite with Azure Blob Storage backup for container deployments
 - 🏥 **Health Endpoints**: `/health` and `/ready` for container orchestration
+- 🚦 **API Rate Limiting**: Optional rate limiting to protect against abuse
+- 🧪 **Comprehensive Tests**: Unit tests with pytest-asyncio for API and repository layers
 - ☁️ **Azure Container Apps Ready**: Deploy with managed identity authentication
 
 ## Supported Resource Types
@@ -59,6 +61,19 @@ uv sync
 
 # Or using pip
 pip install -e .
+```
+
+### Optional Dependencies
+
+```bash
+# PostgreSQL support (for production databases)
+pip install -e ".[postgres]"
+
+# API rate limiting
+pip install -e ".[ratelimit]"
+
+# All optional dependencies
+pip install -e ".[postgres,ratelimit,charts]"
 ```
 
 ## Configuration
