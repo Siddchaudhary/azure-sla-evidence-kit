@@ -637,21 +637,10 @@
 
     let trendChart = null;
     const allTrendData = {{ trend_data | tojson | safe }};
-    
-    console.log('Initial trend data:', allTrendData);
 
     function createTrendChart(data) {
         const canvas = document.getElementById('trendChart');
-        console.log('createTrendChart called with', data ? data.length : 0, 'data points');
-        
-        if (!canvas) {
-            console.log('No trendChart canvas found');
-            return;
-        }
-        if (!data || data.length === 0) {
-            console.log('No data for trend chart');
-            return;
-        }
+        if (!canvas || !data || data.length === 0) return;
 
         if (trendChart) {
             trendChart.destroy();
@@ -659,11 +648,7 @@
 
         // Chart.js needs at least 2 points to draw a line
         // If only 1 data point, duplicate it to enable line rendering
-        let chartData = data;
-        if (data.length === 1) {
-            chartData = [data[0], data[0]];
-            console.log('Duplicating single data point to enable line rendering');
-        }
+        let chartData = data.length === 1 ? [data[0], data[0]] : data;
 
         const labels = chartData.map(d => {
             const date = new Date(d.date);
@@ -672,7 +657,6 @@
 
         // Create SLA Target data array with 99.9 for each data point
         const slaTargetData = chartData.map(() => 99.9);
-        console.log('SLA Target data points:', slaTargetData.length, 'values all', slaTargetData[0]);
 
         const datasets = [
             {
@@ -699,9 +683,6 @@
                 order: 0
             }
         ];
-
-        console.log('Initial datasets count:', datasets.length);
-        console.log('SLA Target dataset:', datasets[1]);
 
         // Add min/max band if data available
         const hasMinMax = chartData.some(d => d.min_availability !== null && d.max_availability !== null);
@@ -733,10 +714,6 @@
         // Calculate Y-axis min value - ensure 99.9 SLA line is always visible
         const minDataVal = Math.min(...chartData.map(d => d.min_availability || d.avg_availability || 100));
         const yAxisMin = Math.min(99.5, Math.max(90, Math.floor(minDataVal - 1)));
-
-        console.log('Final datasets count:', datasets.length);
-        console.log('Dataset labels:', datasets.map(d => d.label));
-        console.log('yAxisMin:', yAxisMin, 'yAxisMax: 100.1');
 
         trendChart = new Chart(canvas.getContext('2d'), {
             type: 'line',
