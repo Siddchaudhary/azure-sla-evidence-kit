@@ -11,7 +11,7 @@
 }" x-init="init()">
     
     <!-- Resource Header - Azure Portal Style -->
-    <div class="bg-white border-b border-portal-border">
+    <div class="bg-white dark:bg-portal-cardDark border-b border-portal-border dark:border-portal-borderDark">
         <div class="px-6 py-4">
             <div class="flex items-start gap-4">
                 <!-- Resource Icon -->
@@ -24,26 +24,27 @@
                 <!-- Resource Info -->
                 <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-3">
-                        <h1 class="text-xl font-semibold text-portal-text">SLA Compliance Dashboard</h1>
-                        <button class="p-1 text-portal-textSec hover:bg-black/5 rounded">
+                        <h1 class="text-xl font-semibold text-portal-text dark:text-portal-textDark">SLA Compliance Dashboard</h1>
+                        <button class="p-1 text-portal-textSec dark:text-portal-textSecDark hover:bg-black/5 dark:hover:bg-white/10 rounded">
                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                             </svg>
                         </button>
-                        <button class="p-1 text-portal-textSec hover:bg-black/5 rounded">
+                        <button class="p-1 text-portal-textSec dark:text-portal-textSecDark hover:bg-black/5 dark:hover:bg-white/10 rounded">
                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
                             </svg>
                         </button>
                     </div>
-                    <p class="text-[13px] text-portal-textSec">SLA Dashboard</p>
+                    <p class="text-[13px] text-portal-textSec dark:text-portal-textSecDark">SLA Dashboard</p>
                 </div>
             </div>
         </div>
         
         <!-- Command Bar - Azure Portal Style -->
-        <div class="px-4 py-1 border-t border-portal-border flex items-center gap-1 overflow-x-auto">
+        <div class="px-4 py-1 border-t border-portal-border dark:border-portal-borderDark flex items-center gap-1 overflow-x-auto">
             <button type="button" hx-post="/api/collection/trigger" hx-swap="none"
+                    @htmx:after-request="showToast('Data collection started', 'success')"
                     @click="refreshing = true; setTimeout(() => { refreshing = false; location.reload(); }, 20000)"
                     :disabled="refreshing"
                     class="cmd-btn cmd-btn-primary" :class="{ 'opacity-70 cursor-wait': refreshing }">
@@ -88,27 +89,27 @@
     
     <div class="flex">
         <!-- Secondary Navigation - Azure Portal Style -->
-        <nav class="hidden lg:block w-52 bg-white border-r border-portal-border flex-shrink-0">
+        <nav class="hidden lg:block w-52 bg-white dark:bg-portal-cardDark border-r border-portal-border dark:border-portal-borderDark flex-shrink-0">
             <div class="py-2">
                 <a href="#" @click.prevent="activeTab = 'overview'" 
-                   :class="activeTab === 'overview' ? 'bg-[#e6f2fb] border-l-2 border-azure-500' : 'hover:bg-portal-bg'"
-                   class="flex items-center gap-3 px-4 py-2 text-[13px] text-portal-text">
+                   :class="activeTab === 'overview' ? 'bg-[#e6f2fb] dark:bg-azure-900/30 border-l-2 border-azure-500' : 'hover:bg-portal-bg dark:hover:bg-white/5'"
+                   class="flex items-center gap-3 px-4 py-2 text-[13px] text-portal-text dark:text-portal-textDark">
                     <svg class="w-4 h-4 text-azure-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
                     </svg>
                     Overview
                 </a>
                 
-                <div class="mt-4 pt-4 border-t border-portal-border">
-                    <button class="flex items-center justify-between w-full px-4 py-1 text-[11px] font-semibold text-portal-textSec uppercase">
+                <div class="mt-4 pt-4 border-t border-portal-border dark:border-portal-borderDark">
+                    <button class="flex items-center justify-between w-full px-4 py-1 text-[11px] font-semibold text-portal-textSec dark:text-portal-textSecDark uppercase">
                         <span>Settings</span>
                         <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                         </svg>
                     </button>
                 </div>
-                <a href="/settings" class="flex items-center gap-3 px-4 py-2 text-[13px] text-portal-text hover:bg-portal-bg">
-                    <svg class="w-4 h-4 text-portal-textSec" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <a href="/settings" class="flex items-center gap-3 px-4 py-2 text-[13px] text-portal-text dark:text-portal-textDark hover:bg-portal-bg dark:hover:bg-white/5">
+                    <svg class="w-4 h-4 text-portal-textSec dark:text-portal-textSecDark" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
@@ -122,79 +123,79 @@
             <!-- Loading Overlay -->
             <div x-show="refreshing" x-transition:enter="transition-opacity ease-out duration-200"
                  x-transition:leave="transition-opacity ease-in duration-150"
-                 class="absolute inset-0 bg-white/70 z-50 flex items-center justify-center">
+                 class="absolute inset-0 bg-white/70 dark:bg-portal-bgDark/80 z-50 flex items-center justify-center">
                 <div class="text-center">
                     <svg class="animate-spin h-10 w-10 text-azure-500 mx-auto mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    <p class="text-sm text-portal-textSec">Collecting SLA data...</p>
-                    <p class="text-xs text-portal-textTer mt-1">This may take up to 20 seconds</p>
+                    <p class="text-sm text-portal-textSec dark:text-portal-textSecDark">Collecting SLA data...</p>
+                    <p class="text-xs text-portal-textTer dark:text-portal-textSecDark/70 mt-1">This may take up to 20 seconds</p>
                 </div>
             </div>
             
             <!-- Essentials Panel - Azure Portal Style -->
-            <div class="bg-white rounded border border-portal-border shadow-azure mb-6">
+            <div class="bg-white dark:bg-portal-cardDark rounded border border-portal-border dark:border-portal-borderDark shadow-azure mb-6">
                 <button @click="essentialsOpen = !essentialsOpen" 
-                        class="flex items-center justify-between w-full px-4 py-3 hover:bg-portal-bg">
-                    <span class="text-[13px] font-semibold text-portal-text">Essentials</span>
-                    <svg class="w-4 h-4 text-portal-textSec transition-transform" :class="{'rotate-180': !essentialsOpen}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        class="flex items-center justify-between w-full px-4 py-3 hover:bg-portal-bg dark:hover:bg-white/5">
+                    <span class="text-[13px] font-semibold text-portal-text dark:text-portal-textDark">Essentials</span>
+                    <svg class="w-4 h-4 text-portal-textSec dark:text-portal-textSecDark transition-transform" :class="{'rotate-180': !essentialsOpen}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                     </svg>
                 </button>
                 
-                <div x-show="essentialsOpen" x-collapse class="border-t border-portal-border">
+                <div x-show="essentialsOpen" x-collapse class="border-t border-portal-border dark:border-portal-borderDark">
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-3 p-4 text-[13px]">
                         <div class="flex flex-col">
-                            <span class="text-portal-textSec">Total Resources</span>
-                            <span class="text-portal-text font-medium">{{ total_resources }}</span>
+                            <span class="text-portal-textSec dark:text-portal-textSecDark">Total Resources</span>
+                            <span class="text-portal-text dark:text-portal-textDark font-medium">{{ total_resources }}</span>
                         </div>
                         <div class="flex flex-col">
-                            <span class="text-portal-textSec">Subscriptions</span>
-                            <span class="text-portal-text font-medium">{{ total_subscriptions }}</span>
+                            <span class="text-portal-textSec dark:text-portal-textSecDark">Subscriptions</span>
+                            <span class="text-portal-text dark:text-portal-textDark font-medium">{{ total_subscriptions }}</span>
                         </div>
                         <div class="flex flex-col">
-                            <span class="text-portal-textSec">Compliant</span>
-                            <span class="text-green-600 font-medium">{{ summary.compliant or 0 }} resources</span>
+                            <span class="text-portal-textSec dark:text-portal-textSecDark">Compliant</span>
+                            <span class="text-green-600 dark:text-green-400 font-medium">{{ summary.compliant or 0 }} resources</span>
                         </div>
                         <div class="flex flex-col">
-                            <span class="text-portal-textSec">Breaches</span>
-                            <span class="{% if summary.breach %}text-red-600{% else %}text-portal-text{% endif %} font-medium">{{ summary.breach or 0 }} resources</span>
+                            <span class="text-portal-textSec dark:text-portal-textSecDark">Breaches</span>
+                            <span class="{% if summary.breach %}text-red-600 dark:text-red-400{% else %}text-portal-text dark:text-portal-textDark{% endif %} font-medium">{{ summary.breach or 0 }} resources</span>
                         </div>
                         <div class="flex flex-col">
-                            <span class="text-portal-textSec">Average Availability</span>
-                            <span class="text-portal-text font-medium">{% if summary.avg_availability %}{{ summary.avg_availability | round(2) }}%{% else %}—{% endif %}</span>
+                            <span class="text-portal-textSec dark:text-portal-textSecDark">Average Availability</span>
+                            <span class="text-portal-text dark:text-portal-textDark font-medium">{% if summary.avg_availability %}{{ summary.avg_availability | round(2) }}%{% else %}—{% endif %}</span>
                         </div>
                         <div class="flex flex-col">
-                            <span class="text-portal-textSec">Date Range</span>
-                            <span class="text-portal-text font-medium">{{ start_date }} to {{ end_date }}</span>
+                            <span class="text-portal-textSec dark:text-portal-textSecDark">Date Range</span>
+                            <span class="text-portal-text dark:text-portal-textDark font-medium">{{ start_date }} to {{ end_date }}</span>
                         </div>
                         <div class="flex flex-col">
-                            <span class="text-portal-textSec">Resource Types</span>
-                            <span class="text-portal-text font-medium">{{ resource_types | length }} types</span>
+                            <span class="text-portal-textSec dark:text-portal-textSecDark">Resource Types</span>
+                            <span class="text-portal-text dark:text-portal-textDark font-medium">{{ resource_types | length }} types</span>
                         </div>
                         <div class="flex flex-col">
-                            <span class="text-portal-textSec">Locations</span>
-                            <span class="text-portal-text font-medium">{{ locations | length }} regions</span>
+                            <span class="text-portal-textSec dark:text-portal-textSecDark">Locations</span>
+                            <span class="text-portal-text dark:text-portal-textDark font-medium">{{ locations | length }} regions</span>
                         </div>
                         <div class="flex flex-col">
-                            <span class="text-portal-textSec">Last Refresh</span>
-                            <span class="text-portal-text font-medium">{% if last_refresh %}{{ last_refresh.strftime('%Y-%m-%d %H:%M UTC') }}{% else %}Never{% endif %}</span>
+                            <span class="text-portal-textSec dark:text-portal-textSecDark">Last Refresh</span>
+                            <span class="text-portal-text dark:text-portal-textDark font-medium">{% if last_refresh %}{{ last_refresh.strftime('%Y-%m-%d %H:%M UTC') }}{% else %}Never{% endif %}</span>
                         </div>
                     </div>
                 </div>
             </div>
             
             <!-- Tabs - Azure Portal Style -->
-            <div class="border-b border-portal-border mb-4">
+            <div class="border-b border-portal-border dark:border-portal-borderDark mb-4">
                 <div class="flex gap-0">
                     <button @click="activeTab = 'overview'"
-                            :class="activeTab === 'overview' ? 'border-b-2 border-azure-500 text-azure-500' : 'text-portal-textSec hover:text-portal-text hover:border-b-2 hover:border-portal-border'"
+                            :class="activeTab === 'overview' ? 'border-b-2 border-azure-500 text-azure-500' : 'text-portal-textSec dark:text-portal-textSecDark hover:text-portal-text dark:hover:text-portal-textDark hover:border-b-2 hover:border-portal-border dark:hover:border-portal-borderDark'"
                             class="px-4 py-2 text-[13px] font-medium -mb-px">
                         Overview
                     </button>
                     <button @click="activeTab = 'breaches'"
-                            :class="activeTab === 'breaches' ? 'border-b-2 border-azure-500 text-azure-500' : 'text-portal-textSec hover:text-portal-text hover:border-b-2 hover:border-portal-border'"
+                            :class="activeTab === 'breaches' ? 'border-b-2 border-azure-500 text-azure-500' : 'text-portal-textSec dark:text-portal-textSecDark hover:text-portal-text dark:hover:text-portal-textDark hover:border-b-2 hover:border-portal-border dark:hover:border-portal-borderDark'"
                             class="px-4 py-2 text-[13px] font-medium -mb-px flex items-center gap-1.5">
                         Breaches
                         {% if summary.breach %}<span class="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">{{ summary.breach }}</span>{% endif %}
@@ -307,61 +308,62 @@
                     {% set compliant_pct = ((summary.compliant or 0) / total * 100) if total > 0 else 0 %}
                     
                     <!-- Compliance Rate Card -->
-                    <div class="bg-white rounded border border-portal-border shadow-azure p-4">
-                        <div class="text-[12px] text-portal-textSec uppercase tracking-wide mb-2">Compliance Rate</div>
+                    <div class="bg-white dark:bg-portal-cardDark rounded border border-portal-border dark:border-portal-borderDark shadow-azure p-4 group hover:shadow-azure-lg transition-shadow">
+                        <div class="text-[12px] text-portal-textSec dark:text-portal-textSecDark uppercase tracking-wide mb-2">Compliance Rate</div>
                         <div class="flex items-end gap-2">
-                            <span class="text-3xl font-semibold {% if compliant_pct >= 99 %}text-green-600{% elif compliant_pct >= 95 %}text-yellow-600{% else %}text-red-600{% endif %}">
-                                {{ compliant_pct | round(1) }}%
-                            </span>
+                            <span class="text-3xl font-semibold {% if compliant_pct >= 99 %}text-green-600 dark:text-green-400{% elif compliant_pct >= 95 %}text-yellow-600 dark:text-yellow-400{% else %}text-red-600 dark:text-red-400{% endif %}"
+                                  data-count="{{ compliant_pct | round(1) }}" data-format="percent">0%</span>
                         </div>
-                        <div class="mt-3 h-2 bg-gray-100 rounded-full overflow-hidden">
-                            <div class="h-full bg-green-500" style="width: {{ compliant_pct }}%"></div>
+                        <div class="mt-3 h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                            <div class="h-full bg-green-500 transition-all duration-1000 ease-out" style="width: 0%" data-width="{{ compliant_pct }}%"></div>
                         </div>
                     </div>
                     
                     <!-- Compliant -->
-                    <div class="bg-white rounded border border-portal-border shadow-azure p-4">
-                        <div class="text-[12px] text-portal-textSec uppercase tracking-wide mb-2">Compliant</div>
+                    <div class="bg-white dark:bg-portal-cardDark rounded border border-portal-border dark:border-portal-borderDark shadow-azure p-4 group hover:shadow-azure-lg transition-shadow">
+                        <div class="text-[12px] text-portal-textSec dark:text-portal-textSecDark uppercase tracking-wide mb-2">Compliant</div>
                         <div class="flex items-baseline gap-2">
-                            <span class="text-3xl font-semibold text-green-600">{{ summary.compliant or 0 }}</span>
-                            <span class="text-[13px] text-portal-textSec">resources</span>
+                            <span class="text-3xl font-semibold text-green-600 dark:text-green-400" data-count="{{ summary.compliant or 0 }}">0</span>
+                            <span class="text-[13px] text-portal-textSec dark:text-portal-textSecDark">resources</span>
                         </div>
-                        <div class="mt-2 text-[12px] text-green-600">✓ Meeting SLA targets</div>
+                        <div class="mt-2 text-[12px] text-green-600 dark:text-green-400">✓ Meeting SLA targets</div>
                     </div>
                     
                     <!-- Breaches -->
-                    <div class="bg-white rounded border border-portal-border shadow-azure p-4">
-                        <div class="text-[12px] text-portal-textSec uppercase tracking-wide mb-2">Breaches</div>
+                    <div class="bg-white dark:bg-portal-cardDark rounded border border-portal-border dark:border-portal-borderDark shadow-azure p-4 group hover:shadow-azure-lg transition-shadow">
+                        <div class="text-[12px] text-portal-textSec dark:text-portal-textSecDark uppercase tracking-wide mb-2">Breaches</div>
                         <div class="flex items-baseline gap-2">
-                            <span class="text-3xl font-semibold {% if summary.breach %}text-red-600{% else %}text-portal-text{% endif %}">{{ summary.breach or 0 }}</span>
-                            <span class="text-[13px] text-portal-textSec">resources</span>
+                            <span class="text-3xl font-semibold {% if summary.breach %}text-red-600 dark:text-red-400{% else %}text-portal-text dark:text-portal-textDark{% endif %}" data-count="{{ summary.breach or 0 }}">0</span>
+                            <span class="text-[13px] text-portal-textSec dark:text-portal-textSecDark">resources</span>
                         </div>
-                        <div class="mt-2 text-[12px] {% if summary.breach %}text-red-600{% else %}text-portal-textSec{% endif %}">
+                        <div class="mt-2 text-[12px] {% if summary.breach %}text-red-600 dark:text-red-400{% else %}text-portal-textSec dark:text-portal-textSecDark{% endif %}">
                             {% if summary.breach %}⚠ Below SLA targets{% else %}✓ No breaches{% endif %}
                         </div>
                     </div>
                     
                     <!-- Avg Availability -->
-                    <div class="bg-white rounded border border-portal-border shadow-azure p-4">
-                        <div class="text-[12px] text-portal-textSec uppercase tracking-wide mb-2">Avg Availability</div>
+                    <div class="bg-white dark:bg-portal-cardDark rounded border border-portal-border dark:border-portal-borderDark shadow-azure p-4 group hover:shadow-azure-lg transition-shadow">
+                        <div class="text-[12px] text-portal-textSec dark:text-portal-textSecDark uppercase tracking-wide mb-2">Avg Availability</div>
                         <div class="flex items-baseline gap-2">
-                            <span class="text-3xl font-semibold text-azure-500">
-                                {% if summary.avg_availability %}{{ summary.avg_availability | round(2) }}{% else %}—{% endif %}
-                            </span>
-                            <span class="text-[13px] text-portal-textSec">{% if summary.avg_availability %}%{% endif %}</span>
+                            {% if summary.avg_availability %}
+                            <span class="text-3xl font-semibold text-azure-500" data-count="{{ summary.avg_availability | round(2) }}" data-format="decimal">0</span>
+                            <span class="text-[13px] text-portal-textSec dark:text-portal-textSecDark">%</span>
+                            {% else %}
+                            <span class="text-3xl font-semibold text-azure-500">—</span>
+                            {% endif %}
                         </div>
-                        <div class="mt-2 text-[12px] text-portal-textSec">Across all resources</div>
+                        <div class="mt-2 text-[12px] text-portal-textSec dark:text-portal-textSecDark">Across all resources</div>
                     </div>
                 </div>
                 
                 <!-- Charts Row -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
                     <!-- Trend Chart -->
-                    <div class="bg-white rounded border border-portal-border shadow-azure">
-                        <div class="px-4 py-3 border-b border-portal-border flex items-center justify-between">
-                            <h3 class="text-[14px] font-semibold text-portal-text">SLA Trend</h3>
+                    <div class="bg-white dark:bg-portal-cardDark rounded border border-portal-border dark:border-portal-borderDark shadow-azure">
+                        <div class="px-4 py-3 border-b border-portal-border dark:border-portal-borderDark flex items-center justify-between">
+                            <h3 class="text-[14px] font-semibold text-portal-text dark:text-portal-textDark">SLA Trend</h3>
                             <div class="flex items-center gap-2">
-                                <select id="trendPeriod" onchange="updateTrendChart(this.value)" class="text-[12px] border border-portal-border rounded px-2 py-1 bg-white">
+                                <select id="trendPeriod" onchange="updateTrendChart(this.value)" class="text-[12px] border border-portal-border dark:border-portal-borderDark rounded px-2 py-1 bg-white dark:bg-portal-cardDark text-portal-text dark:text-portal-textDark">
                                     <option value="7">7 days</option>
                                     <option value="30" selected>30 days</option>
                                     <option value="90">90 days</option>
@@ -372,7 +374,7 @@
                             {% if trend_data and trend_data | length > 0 %}
                             <canvas id="trendChart" height="220"></canvas>
                             {% else %}
-                            <div class="h-[220px] flex flex-col items-center justify-center text-portal-textSec">
+                            <div class="h-[220px] flex flex-col items-center justify-center text-portal-textSec dark:text-portal-textSecDark">
                                 <svg class="w-12 h-12 mb-2 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                                 </svg>
@@ -384,45 +386,42 @@
                     </div>
                     
                     <!-- Compliance Distribution -->
-                    <div class="bg-white rounded border border-portal-border shadow-azure">
-                        <div class="px-4 py-3 border-b border-portal-border">
-                            <h3 class="text-[14px] font-semibold text-portal-text">Compliance Distribution</h3>
+                    <div class="bg-white dark:bg-portal-cardDark rounded border border-portal-border dark:border-portal-borderDark shadow-azure">
+                        <div class="px-4 py-3 border-b border-portal-border dark:border-portal-borderDark">
+                            <h3 class="text-[14px] font-semibold text-portal-text dark:text-portal-textDark">Compliance Distribution</h3>
                         </div>
                         <div class="p-4">
                             {% if total > 0 %}
                             <div class="flex items-center gap-6">
-                                <!-- Donut visualization -->
-                                <div class="relative w-32 h-32 flex-shrink-0">
-                                    <svg class="w-32 h-32 transform -rotate-90" viewBox="0 0 100 100">
-                                        <circle cx="50" cy="50" r="40" fill="none" stroke="#e5e7eb" stroke-width="12"/>
-                                        <circle cx="50" cy="50" r="40" fill="none" stroke="#22c55e" stroke-width="12"
-                                                stroke-dasharray="{{ compliant_pct * 2.51 }} 251" stroke-linecap="round"/>
-                                    </svg>
+                                <!-- Animated Donut Chart using Chart.js -->
+                                <div class="relative w-36 h-36 flex-shrink-0">
+                                    <canvas id="donutChart" width="144" height="144"></canvas>
                                     <div class="absolute inset-0 flex flex-col items-center justify-center">
-                                        <span class="text-2xl font-bold text-portal-text">{{ compliant_pct | round(0) }}%</span>
+                                        <span class="text-2xl font-bold text-portal-text dark:text-portal-textDark" data-count="{{ compliant_pct | round(0) }}" data-format="percent">0%</span>
+                                        <span class="text-[11px] text-portal-textSec dark:text-portal-textSecDark">compliant</span>
                                     </div>
                                 </div>
                                 
-                                <div class="space-y-3 text-[13px]">
+                                <div class="space-y-3 text-[13px] flex-1">
                                     <div class="flex items-center gap-3">
                                         <span class="w-3 h-3 rounded-full bg-green-500"></span>
-                                        <span class="text-portal-textSec">Compliant</span>
-                                        <span class="font-medium text-portal-text ml-auto">{{ summary.compliant or 0 }}</span>
+                                        <span class="text-portal-textSec dark:text-portal-textSecDark">Compliant</span>
+                                        <span class="font-medium text-portal-text dark:text-portal-textDark ml-auto" data-count="{{ summary.compliant or 0 }}">0</span>
                                     </div>
                                     <div class="flex items-center gap-3">
                                         <span class="w-3 h-3 rounded-full bg-red-500"></span>
-                                        <span class="text-portal-textSec">Breach</span>
-                                        <span class="font-medium text-portal-text ml-auto">{{ summary.breach or 0 }}</span>
+                                        <span class="text-portal-textSec dark:text-portal-textSecDark">Breach</span>
+                                        <span class="font-medium text-portal-text dark:text-portal-textDark ml-auto" data-count="{{ summary.breach or 0 }}">0</span>
                                     </div>
                                     <div class="flex items-center gap-3">
                                         <span class="w-3 h-3 rounded-full bg-yellow-500"></span>
-                                        <span class="text-portal-textSec">Unknown</span>
-                                        <span class="font-medium text-portal-text ml-auto">{{ summary.unknown or 0 }}</span>
+                                        <span class="text-portal-textSec dark:text-portal-textSecDark">Unknown</span>
+                                        <span class="font-medium text-portal-text dark:text-portal-textDark ml-auto" data-count="{{ summary.unknown or 0 }}">0</span>
                                     </div>
                                 </div>
                             </div>
                             {% else %}
-                            <div class="h-48 flex items-center justify-center text-portal-textSec text-[13px]">
+                            <div class="h-48 flex items-center justify-center text-portal-textSec dark:text-portal-textSecDark text-[13px]">
                                 No compliance data available
                             </div>
                             {% endif %}
@@ -432,9 +431,9 @@
                 
                 <!-- Compliance Trend Chart (Full Width) -->
                 {% if trend_data and trend_data | length > 1 %}
-                <div class="bg-white rounded border border-portal-border shadow-azure mb-6">
-                    <div class="px-4 py-3 border-b border-portal-border flex items-center justify-between">
-                        <h3 class="text-[14px] font-semibold text-portal-text">Compliance Trend</h3>
+                <div class="bg-white dark:bg-portal-cardDark rounded border border-portal-border dark:border-portal-borderDark shadow-azure mb-6">
+                    <div class="px-4 py-3 border-b border-portal-border dark:border-portal-borderDark flex items-center justify-between">
+                        <h3 class="text-[14px] font-semibold text-portal-text dark:text-portal-textDark">Compliance Trend</h3>
                         <div class="flex items-center gap-4 text-[11px]">
                             <span class="flex items-center gap-1.5">
                                 <span class="w-3 h-1.5 rounded bg-green-500"></span>
@@ -456,7 +455,7 @@
             <!-- Breaches Tab Content -->
             <div x-show="activeTab === 'breaches'">
                 {% if breaches %}
-                <div class="bg-white rounded border border-portal-border shadow-azure overflow-hidden">
+                <div class="bg-white dark:bg-portal-cardDark rounded border border-portal-border dark:border-portal-borderDark shadow-azure overflow-hidden">
                     <table class="w-full azure-table">
                         <thead>
                             <tr>
@@ -508,17 +507,17 @@
                         </tbody>
                     </table>
                     
-                    <div class="px-4 py-2 border-t border-portal-border text-[12px] text-portal-textSec">
+                    <div class="px-4 py-2 border-t border-portal-border dark:border-portal-borderDark text-[12px] text-portal-textSec dark:text-portal-textSecDark">
                         Showing 1 - {{ [breaches | length, 15] | min }} of {{ breaches | length }}
                     </div>
                 </div>
                 {% else %}
-                <div class="bg-white rounded border border-portal-border shadow-azure p-8 text-center">
+                <div class="bg-white dark:bg-portal-cardDark rounded border border-portal-border dark:border-portal-borderDark shadow-azure p-8 text-center">
                     <svg class="w-12 h-12 mx-auto text-green-500 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <h3 class="text-[14px] font-semibold text-portal-text">All Clear</h3>
-                    <p class="text-[13px] text-portal-textSec mt-1">No SLA breaches detected in the selected time range</p>
+                    <h3 class="text-[14px] font-semibold text-portal-text dark:text-portal-textDark">All Clear</h3>
+                    <p class="text-[13px] text-portal-textSec dark:text-portal-textSecDark mt-1">No SLA breaches detected in the selected time range</p>
                 </div>
                 {% endif %}
             </div>
@@ -767,7 +766,76 @@
     document.addEventListener('DOMContentLoaded', function() {
         createTrendChart(allTrendData);
         createComplianceTrendChart(allTrendData);
+        createDonutChart();
+        animateProgressBars();
     });
+
+    // Animated Donut Chart
+    function createDonutChart() {
+        const canvas = document.getElementById('donutChart');
+        if (!canvas) return;
+        
+        const compliant = {{ summary.compliant or 0 }};
+        const breach = {{ summary.breach or 0 }};
+        const unknown = {{ summary.unknown or 0 }};
+        const total = compliant + breach + unknown;
+        
+        if (total === 0) return;
+        
+        const isDark = document.documentElement.classList.contains('dark');
+        
+        new Chart(canvas.getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Compliant', 'Breach', 'Unknown'],
+                datasets: [{
+                    data: [compliant, breach, unknown],
+                    backgroundColor: ['#22c55e', '#ef4444', '#eab308'],
+                    borderColor: isDark ? '#252526' : '#ffffff',
+                    borderWidth: 2,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                cutout: '70%',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: isDark ? '#1e1e1e' : 'rgba(255,255,255,0.95)',
+                        titleColor: isDark ? '#e5e5e5' : '#323130',
+                        bodyColor: isDark ? '#a0a0a0' : '#605e5c',
+                        borderColor: isDark ? '#3d3d3d' : '#edebe9',
+                        borderWidth: 1,
+                        padding: 12,
+                        callbacks: {
+                            label: (ctx) => {
+                                const pct = ((ctx.raw / total) * 100).toFixed(1);
+                                return `${ctx.label}: ${ctx.raw} (${pct}%)`;
+                            }
+                        }
+                    }
+                },
+                animation: {
+                    animateRotate: true,
+                    animateScale: true,
+                    duration: 1000,
+                    easing: 'easeOutQuart'
+                }
+            }
+        });
+    }
+    
+    // Animate progress bars
+    function animateProgressBars() {
+        document.querySelectorAll('[data-width]').forEach(el => {
+            const targetWidth = el.dataset.width;
+            setTimeout(() => {
+                el.style.width = targetWidth;
+            }, 100);
+        });
+    }
 
     function createComplianceTrendChart(data) {
         const canvas = document.getElementById('complianceTrendChart');
